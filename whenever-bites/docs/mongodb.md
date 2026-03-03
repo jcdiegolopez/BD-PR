@@ -1,3 +1,164 @@
+## 2.2 Estructura de Documentos
+
+Colección: restaurantes
+```json
+{
+	"_id": ObjectId(),
+	"nombre": "Asados Rosales",
+	"descripcion": "Autenticos asados desde 2004",
+	"tipo_cocina_id": ObjectId(),        // Ref a tipos_cocina
+	"imagen_portada_id": ObjectId(),     // Ref a GridFS
+	"propietario_id": ObjectId(),        // Ref a usuario con rol owner
+	"sitio_web": "https://asadosrosales.com",
+	"tags": ["carne", "asado", "familiar"],
+	"calificacion_promedio": NumberDecimal("4.2"),
+	"total_resenas": 150,
+	"activo": true,
+	"creado_en": ISODate()
+}
+```
+
+Colección: sucursales
+```json
+{
+	"_id": ObjectId(),
+	"restaurante_id": ObjectId(),        // Ref al restaurante padre
+	"nombre": "Zona 10",
+	"direccion": {
+		"calle": "6a Avenida 12-31",
+		"zona": "Zona 10",
+		"ciudad": "Guatemala City"
+	},
+	"ubicacion": {                       // GeoJSON — indice 2dsphere aqui
+		"type": "Point",
+		"coordinates": [-90.5069, 14.5994]
+	},
+	"telefono": "+502 2234-5678",
+	"horario": { "apertura": "07:00", "cierre": "23:00" },
+	"activa": true,
+	"creado_en": ISODate()
+}
+```
+
+Colección: tipos_cocina
+```json
+{
+	"_id": ObjectId(),
+	"nombre": "Mexicana",
+	"slug": "mexicana",
+	"descripcion": "Tacos, burritos, enchiladas y mas",
+	"imagen_banner_id": ObjectId(),      // Banner de categoria (GridFS)
+	"activa": true,
+	"creado_en": ISODate()
+}
+```
+
+Colección: usuarios
+```json
+{
+	"_id": ObjectId(),
+	"nombre": "Carlos Perez",
+	"email": "carlos@email.com",
+	"password_hash": "hashed_string",
+	"rol": "worker",  // admin | owner | worker | repartidor | customer
+	"telefono": "+502 5555-1234",
+	"sucursal_asignada": ObjectId(),     // Ref a sucursales (worker/repartidor)
+																			 // null para admin, owner, customer
+	"foto_perfil_id": null,              // Ref a GridFS (opcional)
+	"direcciones_guardadas": [           // Solo para customers
+		{
+			"alias": "Casa",
+			"texto": "6a Avenida 12-31, Zona 10",
+			"ubicacion": { "type": "Point", "coordinates": [-90.5069, 14.5994] },
+			"predeterminada": true
+		}
+	],
+	"activo": true,
+	"creado_en": ISODate()
+}
+```
+
+Colección: categorias
+```json
+{
+	"_id": ObjectId(),
+	"restaurante_id": ObjectId(),        // A que restaurante pertenece
+	"nombre": "Tacos",
+	"descripcion": "Tacos artesanales de distintos guisos",
+	"orden_display": 1,
+	"activa": true,
+	"creado_en": ISODate()
+}
+```
+
+Colección: menuitems
+```json
+{
+	"_id": ObjectId(),
+	"restaurante_id": ObjectId(),
+	"categoria_id": ObjectId(),
+	"nombre": "Taco de Res",
+	"descripcion": "Taco con carne de res, cilantro y salsa verde",
+	"precio": NumberDecimal("45.00"),
+	"imagen_id": ObjectId(),             // Ref a GridFS
+	"tags": ["bestseller", "carne", "sin gluten"],
+	"opciones": [
+		{ "nombre": "Salsa", "valores": ["verde","roja","sin salsa"], "requerido": true }
+	],
+	"disponible": true,
+	"creado_en": ISODate()
+}
+```
+
+Colección: ordenes
+```json
+{
+	"_id": ObjectId(),
+	"restaurante_id": ObjectId(),        // Ref a restaurantes
+	"sucursal_id": ObjectId(),           // Ref a sucursales (coleccion independiente)
+	"usuario_id": ObjectId(),
+	"tipo": "delivery",                  // pickup | delivery
+	"items": [
+		{
+			"menuitem_id": ObjectId(),
+			"nombre": "Taco de Res",
+			"precio_unitario": NumberDecimal("45.00"),
+			"cantidad": 2,
+			"subtotal": NumberDecimal("90.00"),
+			"opciones_elegidas": { "Salsa": "verde" }
+		}
+	],
+	"monto_total": NumberDecimal("90.00"),
+	"estado_actual": "pendiente",
+	"historial_estados": [
+		{ "estado": "pendiente", "timestamp": ISODate(), "cambiado_por": null }
+	],
+	"direccion_entrega": {               // null si tipo es pickup
+		"texto": "6a Avenida 12-31, Zona 10",
+		"ubicacion": { "type": "Point", "coordinates": [-90.5069, 14.5994] }
+	},
+	"notas": "Sin pepinillos",
+	"creado_en": ISODate()
+}
+```
+
+Colección: resenas
+```json
+{
+	"_id": ObjectId(),
+	"usuario_id": ObjectId(),
+	"restaurante_id": ObjectId(),        // A cual restaurante va la resena
+	"orden_id": ObjectId(),              // Valida que hizo orden previa
+	"calificacion": 4,                  // Entero 1-5
+	"comentario": "Muy buenos tacos, servicio rapido.",
+	"fotos_ids": [],                    // Array de ref a GridFS (opcional)
+	"util_count": 0,
+	"creado_en": ISODate()
+}
+```
+
+
+## 
 
 
 ## 🗂️ Queries e Índices
