@@ -1,11 +1,19 @@
 import LoginForm from "@/components/auth/LoginForm";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { ROLE_HOME, getSessionUser } from "@/lib/permissions";
 
 export const metadata = {
   title: "Iniciar sesión — Whenever Bites",
 };
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const user = await getSessionUser();
+
+  if (user) {
+    redirect(ROLE_HOME[user.rol] || "/");
+  }
+
   return (
     <main className="flex min-h-[80vh] items-center justify-center px-4">
       <div className="w-full max-w-md space-y-8">

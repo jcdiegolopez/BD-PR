@@ -2,7 +2,7 @@ import Button from "@/components/ui/Button";
 
 export default function Home() {
   return (
-    <main className="space-y-32 py-16 md:py-24">
+    <main className="mx-auto max-w-screen-xl space-y-32 px-6 py-16 md:py-24">
 
       {/* ── Hero: nombre gigante estilo editorial ── */}
       <section className="space-y-10">
@@ -16,9 +16,6 @@ export default function Home() {
           en una sola experiencia operativa.
         </p>
         <div className="flex flex-wrap gap-4">
-          <Button href="/(customer)/home" variant="primary">
-            Explorar restaurantes
-          </Button>
           <Button href="/login" variant="secondary">
             Iniciar sesión
           </Button>
@@ -115,7 +112,7 @@ export default function Home() {
             sucursal y equipo.
           </p>
           <a
-            href="/(auth)/login"
+            href="/login"
             className="inline-flex h-12 items-center justify-center rounded-md border border-text-contrast px-6 text-sm font-medium text-text-contrast transition-colors duration-200 hover:bg-background-primary hover:text-accent"
           >
             Empezar ahora

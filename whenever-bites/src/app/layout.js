@@ -18,7 +18,7 @@ export default function RootLayout({ children }) {
       <body
         className={`${dmSans.className} bg-background-primary text-text-primary antialiased`}
       >
-        <div className="container max-w-screen-xl py-12">{children}</div>
+        {children}
       </body>
     </html>
   );

@@ -44,7 +44,7 @@ export async function POST(request) {
       { expiresIn: JWT_EXPIRES_IN },
     );
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       token,
       user: {
         _id: user._id,
@@ -53,6 +53,16 @@ export async function POST(request) {
         rol: user.rol,
       },
     });
+
+    response.cookies.set("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 8,
+    });
+
+    return response;
   } catch (error) {
     console.error("Error en login:", error);
     return NextResponse.json({ error: "Error en login" }, { status: 500 });
