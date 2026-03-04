@@ -19,7 +19,7 @@ export default function Home() {
           <Button href="/(customer)/home" variant="primary">
             Explorar restaurantes
           </Button>
-          <Button href="/(auth)/login" variant="secondary">
+          <Button href="/login" variant="secondary">
             Iniciar sesión
           </Button>
         </div>

@@ -1,10 +1,23 @@
 import { MongoClient } from "mongodb";
+import dns from "node:dns";
 
 const uri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB;
+const dnsServers = process.env.MONGODB_DNS_SERVERS;
 
 if (!uri) {
   throw new Error("MONGODB_URI no está definido en .env.local");
+}
+
+if (uri.startsWith("mongodb+srv://") && dnsServers) {
+  const servers = dnsServers
+    .split(",")
+    .map((server) => server.trim())
+    .filter(Boolean);
+
+  if (servers.length > 0) {
+    dns.setServers(servers);
+  }
 }
 
 let client;
