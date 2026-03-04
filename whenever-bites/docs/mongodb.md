@@ -64,7 +64,7 @@ Colección: usuarios
 	"telefono": "+502 5555-1234",
 	"sucursal_asignada": ObjectId(),     // Ref a sucursales (worker/repartidor)
 																			 // null para admin, owner, customer
-	"foto_perfil_id": null,              // Ref a GridFS (opcional)
+	"foto_perfil_id": null,              // Ref a GridFS
 	"direcciones_guardadas": [           // Solo para customers
 		{
 			"alias": "Casa",
@@ -90,7 +90,7 @@ Colección: categorias
 	"creado_en": ISODate()
 }
 ```
-
+no te hueco rindas
 Colección: menuitems
 ```json
 {

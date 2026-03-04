@@ -1,4 +1,5 @@
 import LoginForm from "@/components/auth/LoginForm";
+import Link from "next/link";
 
 export const metadata = {
   title: "Iniciar sesión — Whenever Bites",
@@ -26,12 +27,12 @@ export default function LoginPage() {
 
         <p className="text-center text-sm text-text-secondary">
           ¿No tienes cuenta?{" "}
-          <a
+          <Link
             href="/"
             className="font-medium text-accent transition-colors duration-200 hover:text-accent-dark"
           >
             Volver al inicio
-          </a>
+          </Link>
         </p>
       </div>
     </main>

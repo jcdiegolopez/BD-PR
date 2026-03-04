@@ -34,11 +34,11 @@ export default function LoginForm() {
       localStorage.setItem("user", JSON.stringify(data.user));
 
       const rolRoutes = {
-        admin: "/admin",
-        owner: "/owner",
-        worker: "/worker",
-        repartidor: "/repartidor",
-        customer: "/",
+        admin: "/usuarios",
+        owner: "/menu",
+        worker: "/cola",
+        repartidor: "/entregas",
+        customer: "/home",
       };
 
       window.location.href = rolRoutes[data.user.rol] || "/";
@@ -74,7 +74,7 @@ export default function LoginForm() {
           placeholder="tu@email.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="h-12 w-full rounded-md border border-text-secondary/20 bg-background-primary px-4 text-text-primary placeholder:text-text-secondary/60 transition-colors duration-200 focus:border-accent focus:ring-1 focus:ring-accent"
+          className="h-12 w-full rounded-md border border-text-secondary/20 bg-background-secondary px-4 text-text-primary placeholder:text-text-secondary/60 transition-colors duration-200 focus:border-accent focus:ring-1 focus:ring-accent"
         />
       </div>
 
@@ -95,7 +95,7 @@ export default function LoginForm() {
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="h-12 w-full rounded-md border border-text-secondary/20 bg-background-primary px-4 pr-12 text-text-primary placeholder:text-text-secondary/60 transition-colors duration-200 focus:border-accent focus:ring-1 focus:ring-accent"
+            className="h-12 w-full rounded-md border border-text-secondary/20 bg-background-secondary px-4 pr-12 text-text-primary placeholder:text-text-secondary/60 transition-colors duration-200 focus:border-accent focus:ring-1 focus:ring-accent"
           />
           <button
             type="button"

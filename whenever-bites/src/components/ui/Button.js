@@ -6,7 +6,7 @@ export default function Button({
   ...props
 }) {
   const baseClasses =
-    "inline-flex h-12 items-center justify-center rounded-md px-6 text-sm font-medium transition-colors duration-200";
+    "inline-flex h-12 items-center justify-center rounded-md px-6 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background-primary disabled:cursor-not-allowed";
 
   const variants = {
     primary: "bg-accent text-text-contrast hover:bg-accent-dark",
