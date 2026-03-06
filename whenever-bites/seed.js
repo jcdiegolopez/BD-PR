@@ -115,7 +115,7 @@ async function buildUsuarios() {
       password_hash: hash("Owner1234!"),
       rol: "owner",
       telefono: "+502 5511-0001",
-      sucursal_asignada: sIds.asados_z10,
+      sucursal_asignada: null,
       foto_perfil_id: null,
       direcciones_guardadas: [],
       activo: true,
@@ -128,7 +128,7 @@ async function buildUsuarios() {
       password_hash: hash("Owner1234!"),
       rol: "owner",
       telefono: "+502 5511-0002",
-      sucursal_asignada: sIds.pizza_z9,
+      sucursal_asignada: null,
       foto_perfil_id: null,
       direcciones_guardadas: [],
       activo: true,
@@ -554,6 +554,16 @@ const PRECIOS_MENU = new Map([
   [miIds.pepian.toHexString(), dec("65.00")],
 ]);
 
+const NOMBRES_MENU = new Map([
+  [miIds.asado_res.toHexString(), "Asado de Res"],
+  [miIds.churrasco.toHexString(), "Churrasco Guatemalteco"],
+  [miIds.limonada.toHexString(), "Limonada Natural"],
+  [miIds.pizza_marg.toHexString(), "Pizza Margarita"],
+  [miIds.pizza_4q.toHexString(), "Pizza 4 Quesos"],
+  [miIds.chuchito.toHexString(), "Chuchitos (3 unidades)"],
+  [miIds.pepian.toHexString(), "Pepián de Pollo"],
+]);
+
 function buildOrden(i) {
   const esDelivery = i % 3 !== 0;
   const tipo = esDelivery ? "delivery" : "pickup";
@@ -575,7 +585,7 @@ function buildOrden(i) {
     const pu = parseFloat(precioUnitario.toString());
     return {
       menuitem_id: mid,
-      nombre: "Item",
+      nombre: NOMBRES_MENU.get(mid.toHexString()),
       precio_unitario: precioUnitario,
       cantidad,
       subtotal: dec((pu * cantidad).toFixed(2)),
