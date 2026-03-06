@@ -1,56 +1,56 @@
-import { getDb } from "@/lib/mongodb";
-import { requireSessionUser } from "@/lib/permissions";
+"use client";
 
-export const metadata = {
-  title: "Inicio — Customer",
-};
+import { useState, useEffect } from "react";
 
-async function getRestaurantes() {
-  const db = await getDb();
+export default function CustomerHomePage() {
+  const [restaurantes, setRestaurantes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [userEmail, setUserEmail] = useState("");
 
-  const restaurantes = await db
-    .collection("restaurantes")
-    .find({ activo: true })
-    .toArray();
+  useEffect(() => {
+    const stored = localStorage.getItem("user");
+    if (stored) {
+      try {
+        setUserEmail(JSON.parse(stored).email || "");
+      } catch { /* ignored */ }
+    }
 
-  const tiposCocina = await db.collection("tipos_cocina").find().toArray();
-  const tipoMap = Object.fromEntries(
-    tiposCocina.map((t) => [String(t._id), t.nombre]),
-  );
+    fetch("/api/restaurantes")
+      .then((res) => {
+        if (!res.ok) throw new Error("Error al cargar restaurantes");
+        return res.json();
+      })
+      .then(setRestaurantes)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const sucursales = await db.collection("sucursales").find({ activa: true }).toArray();
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-48 animate-pulse rounded bg-background-secondary" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-48 animate-pulse rounded-lg bg-background-secondary"
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
-  return JSON.parse(
-    JSON.stringify(
-      restaurantes.map((r) => ({
-        _id: String(r._id),
-        nombre: r.nombre,
-        descripcion: r.descripcion,
-        tipo_cocina: tipoMap[String(r.tipo_cocina_id)] || "—",
-        tags: r.tags || [],
-        calificacion_promedio: r.calificacion_promedio?.toString() || "0",
-        total_resenas: r.total_resenas || 0,
-        sucursales: sucursales
-          .filter((s) => String(s.restaurante_id) === String(r._id))
-          .map((s) => ({
-            nombre: s.nombre,
-            direccion: `${s.direccion.calle}, ${s.direccion.zona}`,
-            horario: `${s.horario.apertura} – ${s.horario.cierre}`,
-          })),
-      })),
-    ),
-  );
-}
-
-export default async function CustomerHomePage() {
-  const user = await requireSessionUser(["customer"]);
-  const restaurantes = await getRestaurantes();
+  if (error) {
+    return <p className="text-accent">{error}</p>;
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-semibold">
-          Hola, {user.email.split("@")[0]}
+          Hola, {userEmail ? userEmail.split("@")[0] : "Cliente"}
         </h2>
         <p className="text-text-secondary text-sm mt-1">
           Explora {restaurantes.length} restaurante
@@ -64,7 +64,6 @@ export default async function CustomerHomePage() {
             key={r._id}
             className="rounded-lg border border-text-secondary/10 bg-background-primary p-5 space-y-3 transition-colors hover:border-accent/30"
           >
-            {/* Header */}
             <div>
               <h3 className="text-lg font-semibold">{r.nombre}</h3>
               <p className="text-text-secondary text-sm mt-0.5">
@@ -72,18 +71,16 @@ export default async function CustomerHomePage() {
               </p>
             </div>
 
-            {/* Meta */}
             <div className="flex flex-wrap items-center gap-3 text-xs text-text-secondary">
               <span className="rounded-full bg-background-secondary px-2.5 py-0.5 font-medium">
                 {r.tipo_cocina}
               </span>
-              <span className="text-amber-500">
+              <span className="text-star">
                 ★ {Number(r.calificacion_promedio).toFixed(1)}
               </span>
               <span>{r.total_resenas} reseñas</span>
             </div>
 
-            {/* Tags */}
             {r.tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {r.tags.map((tag) => (
@@ -97,7 +94,6 @@ export default async function CustomerHomePage() {
               </div>
             )}
 
-            {/* Sucursales */}
             {r.sucursales.length > 0 && (
               <div className="border-t border-text-secondary/10 pt-3 space-y-1.5">
                 {r.sucursales.map((s) => (

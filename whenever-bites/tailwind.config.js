@@ -25,6 +25,20 @@ module.exports = {
           light: '#ED3951',
           dark: '#B8283B',
         },
+        status: {
+          pending:     { bg: '#FEF3C7', text: '#92400E' },
+          progress:    { bg: '#DBEAFE', text: '#1E40AF' },
+          success:     { bg: '#D1FAE5', text: '#065F46' },
+          'success-alt': { bg: '#A7F3D0', text: '#064E3B' },
+          transit:     { bg: '#EDE9FE', text: '#5B21B6' },
+        },
+        role: {
+          owner:       { bg: '#EDE9FE', text: '#5B21B6' },
+          worker:      { bg: '#DBEAFE', text: '#1E40AF' },
+          repartidor:  { bg: '#FEF3C7', text: '#92400E' },
+          customer:    { bg: '#D1FAE5', text: '#065F46' },
+        },
+        star: '#F59E0B',
       },
       fontFamily: {
         sans: ['DM Sans', 'sans-serif'],

@@ -1,9 +1,9 @@
 const STYLES = {
   admin: "bg-accent/10 text-accent",
-  owner: "bg-purple-100 text-purple-700",
-  worker: "bg-blue-100 text-blue-700",
-  repartidor: "bg-amber-100 text-amber-700",
-  customer: "bg-emerald-100 text-emerald-700",
+  owner: "bg-role-owner-bg text-role-owner-text",
+  worker: "bg-role-worker-bg text-role-worker-text",
+  repartidor: "bg-role-repartidor-bg text-role-repartidor-text",
+  customer: "bg-role-customer-bg text-role-customer-text",
 };
 
 const LABELS = {

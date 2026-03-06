@@ -1,67 +1,15 @@
-import { ObjectId } from "mongodb";
-import { getDb } from "@/lib/mongodb";
-import { requireSessionUser } from "@/lib/permissions";
+"use client";
 
-export const metadata = {
-  title: "Mis órdenes",
-};
+import { useState, useEffect } from "react";
 
 const ESTADO_STYLE = {
-  pendiente: "bg-yellow-100 text-yellow-700",
-  preparando: "bg-blue-100 text-blue-700",
-  listo: "bg-emerald-100 text-emerald-700",
-  completado: "bg-emerald-200 text-emerald-800",
-  en_camino: "bg-purple-100 text-purple-700",
-  entregado: "bg-emerald-200 text-emerald-800",
+  pendiente: "bg-status-pending-bg text-status-pending-text",
+  preparando: "bg-status-progress-bg text-status-progress-text",
+  listo: "bg-status-success-bg text-status-success-text",
+  completado: "bg-status-success-alt-bg text-status-success-alt-text",
+  en_camino: "bg-status-transit-bg text-status-transit-text",
+  entregado: "bg-status-success-alt-bg text-status-success-alt-text",
 };
-
-async function getMisOrdenes(userId) {
-  const db = await getDb();
-
-  const ordenes = await db
-    .collection("ordenes")
-    .find({ usuario_id: new ObjectId(userId) })
-    .sort({ creado_en: -1 })
-    .limit(50)
-    .toArray();
-
-  const totalOrdenes = await db
-    .collection("ordenes")
-    .countDocuments({ usuario_id: new ObjectId(userId) });
-
-  const restaurantes = await db.collection("restaurantes").find().toArray();
-  const restMap = Object.fromEntries(
-    restaurantes.map((r) => [String(r._id), r.nombre]),
-  );
-
-  const sucursales = await db.collection("sucursales").find().toArray();
-  const sucMap = Object.fromEntries(
-    sucursales.map((s) => [String(s._id), s.nombre]),
-  );
-
-  return {
-    total: totalOrdenes,
-    ordenes: JSON.parse(
-      JSON.stringify(
-        ordenes.map((o) => ({
-          _id: String(o._id),
-          restaurante: restMap[String(o.restaurante_id)] || "—",
-          sucursal: sucMap[String(o.sucursal_id)] || "—",
-          tipo: o.tipo,
-          items: o.items.map((it) => ({
-            nombre: it.nombre,
-            cantidad: it.cantidad,
-            subtotal: it.subtotal?.toString() || "0",
-          })),
-          monto_total: o.monto_total?.toString() || "0",
-          estado_actual: o.estado_actual,
-          notas: o.notas,
-          creado_en: o.creado_en,
-        })),
-      ),
-    ),
-  };
-}
 
 function formatDate(d) {
   return new Date(d).toLocaleDateString("es-GT", {
@@ -73,9 +21,43 @@ function formatDate(d) {
   });
 }
 
-export default async function MisOrdenesPage() {
-  const user = await requireSessionUser(["customer"]);
-  const { total, ordenes } = await getMisOrdenes(user.id);
+export default function MisOrdenesPage() {
+  const [data, setData] = useState({ total: 0, ordenes: [] });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/ordenes")
+      .then((res) => {
+        if (!res.ok) throw new Error("Error al cargar órdenes");
+        return res.json();
+      })
+      .then(setData)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-48 animate-pulse rounded bg-background-secondary" />
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-32 animate-pulse rounded-lg bg-background-secondary"
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return <p className="text-accent">{error}</p>;
+  }
+
+  const { total, ordenes } = data;
 
   return (
     <div className="space-y-6">
@@ -95,7 +77,6 @@ export default async function MisOrdenesPage() {
               key={o._id}
               className="rounded-lg border border-text-secondary/10 bg-background-primary p-4 space-y-2"
             >
-              {/* Header */}
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <span className="font-semibold">{o.restaurante}</span>
@@ -108,7 +89,6 @@ export default async function MisOrdenesPage() {
                 </span>
               </div>
 
-              {/* Estado + tipo */}
               <div className="flex items-center gap-2">
                 <span
                   className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-medium ${ESTADO_STYLE[o.estado_actual] || "bg-background-secondary text-text-secondary"}`}
@@ -120,7 +100,6 @@ export default async function MisOrdenesPage() {
                 </span>
               </div>
 
-              {/* Items */}
               <div className="border-t border-text-secondary/10 pt-2">
                 {o.items.map((it, i) => (
                   <div
@@ -139,7 +118,6 @@ export default async function MisOrdenesPage() {
                 </div>
               </div>
 
-              {/* Notas */}
               {o.notas && (
                 <p className="text-xs text-text-secondary italic">
                   Nota: {o.notas}

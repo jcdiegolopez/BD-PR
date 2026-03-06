@@ -193,7 +193,7 @@ function AdminDetail() {
 
 function Stars({ count }) {
   return (
-    <span className="text-amber-500">
+    <span className="text-star">
       {"★".repeat(count)}
       {"☆".repeat(5 - count)}
     </span>
@@ -201,12 +201,12 @@ function Stars({ count }) {
 }
 
 const ESTADO_STYLE = {
-  pendiente: "bg-yellow-100 text-yellow-700",
-  preparando: "bg-blue-100 text-blue-700",
-  listo: "bg-emerald-100 text-emerald-700",
-  completado: "bg-emerald-200 text-emerald-800",
-  en_camino: "bg-purple-100 text-purple-700",
-  entregado: "bg-emerald-200 text-emerald-800",
+  pendiente: "bg-status-pending-bg text-status-pending-text",
+  preparando: "bg-status-progress-bg text-status-progress-text",
+  listo: "bg-status-success-bg text-status-success-text",
+  completado: "bg-status-success-alt-bg text-status-success-alt-text",
+  en_camino: "bg-status-transit-bg text-status-transit-text",
+  entregado: "bg-status-success-alt-bg text-status-success-alt-text",
 };
 
 function EstadoBadge({ estado }) {
@@ -292,7 +292,7 @@ function UserRow({ user }) {
         </td>
         <td className="px-4 py-3 text-center">
           <span
-            className={`inline-block h-2 w-2 rounded-full ${user.activo ? "bg-emerald-500" : "bg-text-secondary/40"}`}
+            className={`inline-block h-2 w-2 rounded-full ${user.activo ? "bg-status-success-text" : "bg-text-secondary/40"}`}
             title={user.activo ? "Activo" : "Inactivo"}
           />
         </td>
