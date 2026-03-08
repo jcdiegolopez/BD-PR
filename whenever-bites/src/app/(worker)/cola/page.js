@@ -33,7 +33,25 @@ function timeSince(d) {
   return `${hrs}h ${mins % 60}m`;
 }
 
-function OrderCard({ o }) {
+function getWorkerNextState(order) {
+  if (order.estado_actual === "pendiente") return "preparando";
+  if (order.estado_actual === "preparando") return "listo";
+  if (order.estado_actual === "listo" && order.tipo === "pickup") {
+    return "completado";
+  }
+  return null;
+}
+
+function getWorkerActionLabel(nextState) {
+  if (nextState === "preparando") return "Pasar a preparando";
+  if (nextState === "listo") return "Marcar listo";
+  if (nextState === "completado") return "Marcar completado";
+  return "";
+}
+
+function OrderCard({ o, onAdvance, isUpdating }) {
+  const nextState = getWorkerNextState(o);
+
   return (
     <div className="rounded-lg border border-text-secondary/10 bg-background-primary p-4 space-y-2">
       {/* Header */}
@@ -93,6 +111,23 @@ function OrderCard({ o }) {
       {o.notas && (
         <p className="text-xs text-accent font-medium">⚠️ {o.notas}</p>
       )}
+
+      {nextState && (
+        <button
+          type="button"
+          onClick={() => onAdvance(o._id, nextState)}
+          disabled={isUpdating}
+          className="w-full rounded-md bg-accent px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isUpdating ? "Actualizando..." : getWorkerActionLabel(nextState)}
+        </button>
+      )}
+
+      {!nextState && o.estado_actual === "listo" && o.tipo === "delivery" && (
+        <p className="text-xs text-text-secondary">
+          Esperando que repartidor tome la orden.
+        </p>
+      )}
     </div>
   );
 }
@@ -101,21 +136,52 @@ export default function ColaPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [updatingId, setUpdatingId] = useState("");
+
+  const loadOrders = async () => {
+    const res = await fetch("/api/ordenes");
+
+    if (res.status === 400) {
+      const d = await res.json();
+      throw new Error(
+        d.error || "No tienes una sucursal asignada. Contacta al administrador.",
+      );
+    }
+
+    if (!res.ok) {
+      throw new Error("Error al cargar la cola de órdenes");
+    }
+
+    return res.json();
+  };
+
+  const changeOrderState = async (orderId, nextState) => {
+    setUpdatingId(orderId);
+    setError("");
+
+    try {
+      const res = await fetch(`/api/ordenes/${orderId}/estado`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nextState }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "No se pudo actualizar la orden");
+      }
+
+      const freshData = await loadOrders();
+      setData(freshData);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUpdatingId("");
+    }
+  };
 
   useEffect(() => {
-    fetch("/api/ordenes")
-      .then((res) => {
-        if (res.status === 400) {
-          return res.json().then((d) => {
-            throw new Error(
-              d.error ||
-                "No tienes una sucursal asignada. Contacta al administrador.",
-            );
-          });
-        }
-        if (!res.ok) throw new Error("Error al cargar la cola de órdenes");
-        return res.json();
-      })
+    loadOrders()
       .then(setData)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -202,7 +268,12 @@ export default function ColaPage() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {data.pendientes.map((o) => (
-              <OrderCard key={o._id} o={o} />
+              <OrderCard
+                key={o._id}
+                o={o}
+                onAdvance={changeOrderState}
+                isUpdating={updatingId === o._id}
+              />
             ))}
           </div>
         )}
@@ -226,7 +297,12 @@ export default function ColaPage() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {data.preparando.map((o) => (
-              <OrderCard key={o._id} o={o} />
+              <OrderCard
+                key={o._id}
+                o={o}
+                onAdvance={changeOrderState}
+                isUpdating={updatingId === o._id}
+              />
             ))}
           </div>
         )}
@@ -250,7 +326,12 @@ export default function ColaPage() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {data.listos.map((o) => (
-              <OrderCard key={o._id} o={o} />
+              <OrderCard
+                key={o._id}
+                o={o}
+                onAdvance={changeOrderState}
+                isUpdating={updatingId === o._id}
+              />
             ))}
           </div>
         )}

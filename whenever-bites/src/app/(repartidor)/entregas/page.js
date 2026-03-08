@@ -27,7 +27,21 @@ function formatDate(d) {
   });
 }
 
-function OrderCard({ o, showAddress = false }) {
+function getRepartidorNextState(order) {
+  if (order.estado_actual === "listo") return "en_camino";
+  if (order.estado_actual === "en_camino") return "entregado";
+  return null;
+}
+
+function getRepartidorActionLabel(nextState) {
+  if (nextState === "en_camino") return "Iniciar entrega";
+  if (nextState === "entregado") return "Marcar entregado";
+  return "";
+}
+
+function OrderCard({ o, showAddress = false, onAdvance, isUpdating = false }) {
+  const nextState = getRepartidorNextState(o);
+
   return (
     <div className="rounded-lg border border-text-secondary/10 bg-background-primary p-4 space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -84,6 +98,17 @@ function OrderCard({ o, showAddress = false }) {
       {o.notas && (
         <p className="text-xs text-text-secondary italic">⚠️ {o.notas}</p>
       )}
+
+      {nextState && (
+        <button
+          type="button"
+          onClick={() => onAdvance(o._id, nextState)}
+          disabled={isUpdating}
+          className="w-full rounded-md bg-accent px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isUpdating ? "Actualizando..." : getRepartidorActionLabel(nextState)}
+        </button>
+      )}
     </div>
   );
 }
@@ -92,20 +117,50 @@ export default function EntregasPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [updatingId, setUpdatingId] = useState("");
+
+  const loadOrders = async () => {
+    const res = await fetch("/api/ordenes");
+
+    if (res.status === 400) {
+      const d = await res.json();
+      throw new Error(
+        d.error || "No tienes una sucursal asignada. Contacta al administrador.",
+      );
+    }
+
+    if (!res.ok) throw new Error("Error al cargar entregas");
+
+    return res.json();
+  };
+
+  const changeOrderState = async (orderId, nextState) => {
+    setUpdatingId(orderId);
+    setError("");
+
+    try {
+      const res = await fetch(`/api/ordenes/${orderId}/estado`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nextState }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "No se pudo actualizar la orden");
+      }
+
+      const freshData = await loadOrders();
+      setData(freshData);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUpdatingId("");
+    }
+  };
 
   useEffect(() => {
-    fetch("/api/ordenes")
-      .then((res) => {
-        if (res.status === 400) {
-          return res.json().then((d) => {
-            throw new Error(
-              d.error || "No tienes una sucursal asignada. Contacta al administrador.",
-            );
-          });
-        }
-        if (!res.ok) throw new Error("Error al cargar entregas");
-        return res.json();
-      })
+    loadOrders()
       .then(setData)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -189,7 +244,13 @@ export default function EntregasPage() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {data.activas.map((o) => (
-              <OrderCard key={o._id} o={o} showAddress />
+              <OrderCard
+                key={o._id}
+                o={o}
+                showAddress
+                onAdvance={changeOrderState}
+                isUpdating={updatingId === o._id}
+              />
             ))}
           </div>
         )}
@@ -212,7 +273,13 @@ export default function EntregasPage() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {data.enPreparacion.map((o) => (
-              <OrderCard key={o._id} o={o} showAddress />
+              <OrderCard
+                key={o._id}
+                o={o}
+                showAddress
+                onAdvance={changeOrderState}
+                isUpdating={updatingId === o._id}
+              />
             ))}
           </div>
         )}
@@ -228,7 +295,12 @@ export default function EntregasPage() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {data.completadas.map((o) => (
-              <OrderCard key={o._id} o={o} />
+              <OrderCard
+                key={o._id}
+                o={o}
+                onAdvance={changeOrderState}
+                isUpdating={updatingId === o._id}
+              />
             ))}
           </div>
         )}
