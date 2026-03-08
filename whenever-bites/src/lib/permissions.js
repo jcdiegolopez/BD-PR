@@ -22,6 +22,7 @@ export const ROLE_NAV_ITEMS = {
   admin: [
     { href: "/usuarios", label: "Usuarios" },
     { href: "/restaurantes", label: "Restaurantes" },
+    { href: "/limpieza", label: "Limpieza" },
     { href: "/reportes", label: "Reportes" },
   ],
   owner: [
