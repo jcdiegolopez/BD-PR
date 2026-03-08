@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 
 export default function CustomerHomePage() {
   const [restaurantes, setRestaurantes] = useState([]);
+  const [totalRestaurantes, setTotalRestaurantes] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [userEmail, setUserEmail] = useState("");
@@ -21,7 +22,15 @@ export default function CustomerHomePage() {
         if (!res.ok) throw new Error("Error al cargar restaurantes");
         return res.json();
       })
-      .then(setRestaurantes)
+      .then((payload) => {
+        const data = Array.isArray(payload) ? payload : payload.data || [];
+        const total = Array.isArray(payload)
+          ? payload.length
+          : payload.total || data.length;
+
+        setRestaurantes(data);
+        setTotalRestaurantes(total);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -53,8 +62,8 @@ export default function CustomerHomePage() {
           Hola, {userEmail ? userEmail.split("@")[0] : "Cliente"}
         </h2>
         <p className="text-text-secondary text-sm mt-1">
-          Explora {restaurantes.length} restaurante
-          {restaurantes.length !== 1 && "s"} disponibles
+          Explora {totalRestaurantes} restaurante
+          {totalRestaurantes !== 1 && "s"} disponibles
         </p>
       </div>
 
