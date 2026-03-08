@@ -39,6 +39,10 @@ export async function getDb() {
   return mongoClient.db(dbName);
 }
 
+export async function getMongoClient() {
+  return clientPromise;
+}
+
 export async function pingDatabase() {
   const db = await getDb();
   await db.command({ ping: 1 });

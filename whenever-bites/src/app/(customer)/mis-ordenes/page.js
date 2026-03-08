@@ -27,7 +27,7 @@ export default function MisOrdenesPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("/api/ordenes")
+    fetch("/api/customer/ordenes")
       .then((res) => {
         if (!res.ok) throw new Error("Error al cargar órdenes");
         return res.json();

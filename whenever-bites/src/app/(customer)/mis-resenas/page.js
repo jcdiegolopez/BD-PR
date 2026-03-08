@@ -21,16 +21,25 @@ function formatDate(d) {
 
 export default function MisResenasPage() {
   const [resenas, setResenas] = useState([]);
+  const [totalResenas, setTotalResenas] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("/api/resenas")
+    fetch("/api/customer/resenas")
       .then((res) => {
         if (!res.ok) throw new Error("Error al cargar reseñas");
         return res.json();
       })
-      .then(setResenas)
+      .then((payload) => {
+        const data = Array.isArray(payload) ? payload : payload.data || [];
+        const total = Array.isArray(payload)
+          ? payload.length
+          : payload.total || data.length;
+
+        setResenas(data);
+        setTotalResenas(total);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -60,8 +69,8 @@ export default function MisResenasPage() {
       <div>
         <h2 className="text-2xl font-semibold">Mis reseñas</h2>
         <p className="text-text-secondary text-sm mt-1">
-          {resenas.length} reseña{resenas.length !== 1 && "s"} publicada
-          {resenas.length !== 1 && "s"}
+          {totalResenas} reseña{totalResenas !== 1 && "s"} publicada
+          {totalResenas !== 1 && "s"}
         </p>
       </div>
 
