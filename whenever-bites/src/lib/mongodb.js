@@ -1,4 +1,4 @@
-import { MongoClient } from "mongodb";
+import { MongoClient, GridFSBucket } from "mongodb";
 import dns from "node:dns";
 
 const uri = process.env.MONGODB_URI;
@@ -47,4 +47,9 @@ export async function pingDatabase() {
   const db = await getDb();
   await db.command({ ping: 1 });
   return true;
+}
+
+export async function getGridFSBucket(bucketName = "archivos") {
+  const db = await getDb();
+  return new GridFSBucket(db, { bucketName });
 }

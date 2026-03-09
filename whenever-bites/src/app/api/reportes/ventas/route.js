@@ -49,7 +49,21 @@ const getReportVentasHandler = async (request, context, user) => {
           },
         },
         {
+          $lookup: {
+            from: "restaurantes",
+            localField: "_id",
+            foreignField: "_id",
+            as: "restaurante_info",
+          },
+        },
+        {
           $addFields: {
+            restaurante: {
+              $ifNull: [
+                { $arrayElemAt: ["$restaurante_info.nombre", 0] },
+                "—",
+              ],
+            },
             ticket_promedio: {
               $cond: [
                 { $gt: ["$total_ordenes", 0] },
@@ -59,6 +73,7 @@ const getReportVentasHandler = async (request, context, user) => {
             },
           },
         },
+        { $project: { restaurante_info: 0 } },
         { $sort: { ventas_brutas: -1 } },
       ])
       .toArray();
@@ -67,7 +82,7 @@ const getReportVentasHandler = async (request, context, user) => {
       total: rows.length,
       data: rows.map((row) => ({
         restaurante_id: String(row._id),
-        restaurante: scopeResult.restauranteMap[String(row._id)] || "—",
+        restaurante: row.restaurante,
         total_ordenes: row.total_ordenes,
         ventas_brutas: Number(row.ventas_brutas || 0).toFixed(2),
         ticket_promedio: Number(row.ticket_promedio || 0).toFixed(2),
