@@ -25,13 +25,13 @@ Plataforma de delivery y pickup estilo Rappi con múltiples restaurantes indepen
 
 ### worker
 1. Login → carga su sucursal asignada
-2. Ve la cola de órdenes de su sucursal (pendiente / preparando), ordenada por fecha
+2. Ve la cola de órdenes de su sucursal (pendiente / preparando), ordenada por fecha más reciente, con paginación y filtro por estado
 3. Gestiona cada orden: `pendiente → preparando → listo → completado` (pickup)
 4. Cambio de estado via transacción T3
 
 ### repartidor
 1. Login → carga su sucursal asignada
-2. Ve órdenes delivery con estado `listo` de su sucursal
+2. Ve órdenes delivery con estado `listo` de su sucursal, ordenadas por fecha más reciente, con paginación y filtro por estado
 3. Gestiona cada orden: `listo → en_camino → entregado`
 4. Cambio de estado via transacción T3
 
@@ -89,13 +89,14 @@ Plataforma de delivery y pickup estilo Rappi con múltiples restaurantes indepen
 ### Worker
 | Método | Endpoint | Descripción | Query | Índice | Implementación |
 |---|---|---|---|---|---|
-| GET | `/api/ordenes` <br>(con rol worker) | Cola de órdenes activas de su sucursal (pendientes, preparando, listos) | Q17 `find({ sucursal_id, estado_actual: ... })` <br>Q26 `countDocuments({ sucursal_id, creado_en })` | IDX-05 | [src/app/api/ordenes/route.js](../src/app/api/ordenes/route.js) <br>Función: `handleWorkerOrders` <br>Llamado desde frontend: [src/app/(worker)/cola/page.js](../src/app/(worker)/cola/page.js) |
+| GET | `/api/ordenes` <br>(con rol worker) | Cola de órdenes activas de su sucursal, ordenadas por fecha descendente con paginación y filtro opcional por estado | Q17 `find({ sucursal_id, estado_actual: ... })` <br>Q26 `countDocuments({ sucursal_id, creado_en })` | IDX-05 | [src/app/api/ordenes/route.js](../src/app/api/ordenes/route.js) <br>Función: `handleWorkerOrders` <br>Llamado desde frontend: [src/app/(worker)/cola/page.js](../src/app/(worker)/cola/page.js) |
 | GET | `/api/ordenes/[id]` | Detalle de una orden | Q20 `findOne({ _id })` | PK | [src/app/api/ordenes/[id]/route.js](../src/app/api/ordenes/[id]/route.js) |
 | PATCH | `/api/ordenes/[id]/estado` | Cambiar estado de una orden — T3 (transacción) | Q21 `updateOne` <br>+ validaciones de transición y sucursal <br>+ `$push` historial | PK | [src/app/api/ordenes/[id]/estado/route.js](../src/app/api/ordenes/[id]/estado/route.js) <br>Usa sesión y transacción MongoDB |
 
 **Notas:**
 - El frontend del worker ([src/app/(worker)/cola/page.js](../src/app/(worker)/cola/page.js)) consume `/api/ordenes` para mostrar la cola y `/api/ordenes/[id]/estado` para avanzar el estado.
 - El query Q17 se usa para obtener órdenes por estado (`pendiente`, `preparando`, `listo`) y Q26 para los conteos diarios, ambos usando el índice IDX-05.
+- Incluye paginación con parámetros `page`, `limit` y filtro opcional por `estado` (default: page=1, limit=10). Ordenamiento siempre por `created_en` descendente.
 - El cambio de estado (PATCH) se realiza dentro de una transacción (T3) en el backend, asegurando atomicidad y consistencia.
 - No existe endpoint `/api/worker/cola` ni `/api/worker/cola/count`; la funcionalidad está centralizada en `/api/ordenes` con autenticación de rol worker.
 
@@ -103,13 +104,14 @@ Plataforma de delivery y pickup estilo Rappi con múltiples restaurantes indepen
 ### Repartidor
 | Método | Endpoint | Descripción | Query | Índice | Implementación |
 |---|---|---|---|---|---|
-| GET | `/api/ordenes` <br>(con rol repartidor) | Órdenes delivery listas para entregar de su sucursal | Q18 `find({ sucursal_id, tipo: "delivery", estado_actual: ... })` | IDX-07 | [src/app/api/ordenes/route.js](../src/app/api/ordenes/route.js) <br>Función: `handleRepartidorOrders` |
+| GET | `/api/ordenes` <br>(con rol repartidor) | Órdenes delivery activas de su sucursal, ordenadas por fecha descendente con paginación y filtro opcional por estado | Q18 `find({ sucursal_id, tipo: "delivery", estado_actual: ... })` | IDX-07 | [src/app/api/ordenes/route.js](../src/app/api/ordenes/route.js) <br>Función: `handleRepartidorOrders` |
 | GET | `/api/ordenes/[id]` | Detalle de una orden con dirección de entrega | Q20 `findOne({ _id })` | PK | [src/app/api/ordenes/[id]/route.js](../src/app/api/ordenes/[id]/route.js) |
 | PATCH | `/api/ordenes/[id]/estado` | Cambiar estado de una orden — T3 (transacción) | Q21 `updateOne` <br>+ validaciones de transición y sucursal <br>+ `$push` historial | PK | [src/app/api/ordenes/[id]/estado/route.js](../src/app/api/ordenes/[id]/estado/route.js) <br>Usa sesión y transacción MongoDB |
 
 
 **Notas:**
-- El endpoint `/api/ordenes` con autenticación de rol `repartidor` implementa la lógica de la cola de órdenes delivery listas para entregar, usando el query Q18 e índice IDX-07.
+- El endpoint `/api/ordenes` con autenticación de rol `repartidor` implementa la lógica de la cola de órdenes delivery activas, usando el query Q18 e índice IDX-07.
+- Incluye paginación con parámetros `page`, `limit` y filtro opcional por `estado` (default: page=1, limit=10). Ordenamiento siempre por `created_en` descendente.
 - El detalle de la orden (`GET /api/ordenes/[id]`) es consumido desde el frontend de repartidor ([src/app/(repartidor)/entregas/page.js](../src/app/(repartidor)/entregas/page.js)), mostrando la información en un modal al presionar "Ver detalle".
 - El cambio de estado (`PATCH /api/ordenes/[id]/estado`) también es consumido desde la misma interfaz, permitiendo avanzar el estado de la orden.
 - No existe endpoint `/api/repartidor/cola`; la funcionalidad está centralizada en `/api/ordenes`.
@@ -135,15 +137,16 @@ Plataforma de delivery y pickup estilo Rappi con múltiples restaurantes indepen
 
 ---
 
-## Paginación — solo en `/api/restaurantes`
+## Paginación — en `/api/restaurantes` y `/api/ordenes` (worker/repartidor)
 ```
 ?page=1                               default 1
-?limit=10                             default 10, máximo 20
-?sort=calificacion_promedio | nombre  default calificacion_promedio desc
-?tipo_cocina_id=                      filtro opcional — IDX-22
-?tags=                                filtro opcional — IDX-12 Multikey
-?search=                              búsqueda texto — IDX-14, no combina con sort
+?limit=10                             default 10, máximo 20 (restaurantes) / 50 (ordenes)
+?estado=                               opcional, filtra por estado específico (solo en /api/ordenes)
+?sortBy=creado_en | nombre           default creado_en (ordenes) / calificacion_promedio (restaurantes)
+?sortOrder=asc | desc                default desc (ordenes) / desc (restaurantes)
 ```
+**Notas para /api/ordenes:** Los parámetros `sortBy` y `sortOrder` están hardcodeados a `creado_en desc` para mantener consistencia. El parámetro `estado` permite filtrar órdenes por estado específico.
+
 Respuesta: `{ data, total, page, limit, totalPages }`  
 Implementar con `skip = (page - 1) * limit`
 

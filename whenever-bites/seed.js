@@ -732,7 +732,7 @@ async function crearIndices(db) {
   );
   await db.collection("ordenes").createIndex({ usuario_id: 1, estado_actual: 1 }, { name: "idx_ordenes_usuario_estado" });
   await db.collection("ordenes").createIndex(
-    { sucursal_id: 1, tipo: 1, estado_actual: 1 },
+    { sucursal_id: 1, tipo: 1, estado_actual: 1, creado_en: -1 },
     { name: "idx_ordenes_sucursal_tipo_estado" }
   );
   await db.collection("ordenes").createIndex({ creado_en: -1 }, { name: "idx_ordenes_fecha" });

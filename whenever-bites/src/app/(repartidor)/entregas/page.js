@@ -194,10 +194,17 @@ export default function EntregasPage() {
   const [updatingId, setUpdatingId] = useState("");
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailOrder, setDetailOrder] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedEstado, setSelectedEstado] = useState(""); 
   const detailCache = useRef({});
 
-  const loadOrders = async () => {
-    const res = await fetch("/api/ordenes");
+  const loadOrders = async (page = 1, estado = selectedEstado) => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: "20",
+    });
+    if (estado) params.set("estado", estado);
+    const res = await fetch(`/api/ordenes?${params}`);
     if (res.status === 400) {
       const d = await res.json();
       throw new Error(
@@ -221,7 +228,7 @@ export default function EntregasPage() {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.error || "No se pudo actualizar la orden");
       }
-      const freshData = await loadOrders();
+      const freshData = await loadOrders(currentPage, selectedEstado);
       setData(freshData);
     } catch (err) {
       setError(err.message);
@@ -253,12 +260,34 @@ export default function EntregasPage() {
     }
   };
 
-  useEffect(() => {
-    loadOrders()
-      .then(setData)
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, []);
+  const handleEstadoChange = async (estado) => {
+    setSelectedEstado(estado);
+    setCurrentPage(1);
+    setLoading(true);
+    setError("");
+    try {
+      const newData = await loadOrders(1, estado);
+      setData(newData);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePageChange = async (page) => {
+    setLoading(true);
+    setError("");
+    try {
+      const newData = await loadOrders(page, selectedEstado);
+      setData(newData);
+      setCurrentPage(page);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -307,15 +336,9 @@ export default function EntregasPage() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-lg border border-text-secondary/10 bg-background-primary p-4 text-center">
           <p className="text-2xl font-bold text-accent">
-            {data.stats.activas}
+            {data.stats.totalActivas}
           </p>
           <p className="text-xs text-text-secondary mt-1">Por entregar</p>
-        </div>
-        <div className="rounded-lg border border-text-secondary/10 bg-background-primary p-4 text-center">
-          <p className="text-2xl font-bold text-status-progress-text">
-            {data.stats.enPreparacion}
-          </p>
-          <p className="text-xs text-text-secondary mt-1">En preparación</p>
         </div>
         <div className="rounded-lg border border-text-secondary/10 bg-background-primary p-4 text-center">
           <p className="text-2xl font-bold text-status-success-text">
@@ -329,25 +352,47 @@ export default function EntregasPage() {
           </p>
           <p className="text-xs text-text-secondary mt-1">Total histórico</p>
         </div>
+        <div className="rounded-lg border border-text-secondary/10 bg-background-primary p-4 text-center">
+          <p className="text-2xl font-bold text-text-secondary">
+            {data.pagination.totalPages}
+          </p>
+          <p className="text-xs text-text-secondary mt-1">Páginas</p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <label htmlFor="estado-filter" className="text-sm font-medium">
+          Filtrar por estado:
+        </label>
+        <select
+          id="estado-filter"
+          value={selectedEstado}
+          onChange={handleEstadoChange}
+          className="px-3 py-2 border border-text-secondary/20 rounded-md bg-background-primary text-text-primary"
+        >
+          <option value="">Todos</option>
+          <option value="Listo">Listo</option>
+          <option value="En camino">En camino</option>
+        </select>
       </div>
 
       <section className="space-y-3">
         <h3 className="text-lg font-semibold flex items-center gap-2">
           🛵 Entregas activas
-          {data.activas.length > 0 && (
+          {data.ordenes.length > 0 && (
             <span className="text-xs font-normal bg-accent/10 text-accent rounded-full px-2 py-0.5">
-              {data.activas.length}
+              {data.ordenes.length} de {data.pagination.total}
             </span>
           )}
         </h3>
 
-        {data.activas.length === 0 ? (
+        {data.ordenes.length === 0 ? (
           <p className="text-text-secondary text-sm">
             No hay entregas pendientes en este momento.
           </p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
-            {data.activas.map((o) => (
+            {data.ordenes.map((o) => (
               <OrderCard
                 key={o._id}
                 o={o}
@@ -359,55 +404,27 @@ export default function EntregasPage() {
             ))}
           </div>
         )}
-      </section>
 
-      <section className="space-y-3">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          🍳 En preparación
-          {data.enPreparacion.length > 0 && (
-            <span className="text-xs font-normal bg-status-progress-bg text-status-progress-text rounded-full px-2 py-0.5">
-              {data.enPreparacion.length}
+        {/* Paginación */}
+        {data.pagination.totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-6">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-3 py-2 text-sm border border-text-secondary/20 rounded-md hover:bg-background-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Anterior
+            </button>
+            <span className="text-sm text-text-secondary">
+              Página {currentPage} de {data.pagination.totalPages}
             </span>
-          )}
-        </h3>
-
-        {data.enPreparacion.length === 0 ? (
-          <p className="text-text-secondary text-sm">
-            No hay órdenes en preparación.
-          </p>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {data.enPreparacion.map((o) => (
-              <OrderCard
-                key={o._id}
-                o={o}
-                showAddress
-                onAdvance={changeOrderState}
-                isUpdating={updatingId === o._id}
-                onShowDetail={showOrderDetail}
-              />
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="space-y-3">
-        <h3 className="text-lg font-semibold">✅ Entregas recientes</h3>
-
-        {data.completadas.length === 0 ? (
-          <p className="text-text-secondary text-sm">
-            No hay entregas completadas aún.
-          </p>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {data.completadas.map((o) => (
-              <OrderCard
-                key={o._id}
-                o={o}
-                showAddress
-                onShowDetail={showOrderDetail}
-              />
-            ))}
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === data.pagination.totalPages}
+              className="px-3 py-2 text-sm border border-text-secondary/20 rounded-md hover:bg-background-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Siguiente
+            </button>
           </div>
         )}
       </section>

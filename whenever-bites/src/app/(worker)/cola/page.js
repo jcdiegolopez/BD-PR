@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const ESTADO_STYLE = {
   pendiente: "bg-status-pending-bg text-status-pending-text",
@@ -142,9 +142,6 @@ function OrderCard({ o, onAdvance, isUpdating, onShowDetail }) {
   );
 }
 
-
-import { useRef } from "react";
-
 function DetailModal({ open, onClose, order }) {
   if (!open || !order) return null;
   return (
@@ -211,10 +208,17 @@ export default function ColaPage() {
   const [updatingId, setUpdatingId] = useState("");
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailOrder, setDetailOrder] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedEstado, setSelectedEstado] = useState(""); // "" para todos
   const detailCache = useRef({});
 
-  const loadOrders = async () => {
-    const res = await fetch("/api/ordenes");
+  const loadOrders = async (page = 1, estado = selectedEstado) => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: "20",
+    });
+    if (estado) params.set("estado", estado);
+    const res = await fetch(`/api/ordenes?${params}`);
     if (res.status === 400) {
       const d = await res.json();
       throw new Error(
@@ -240,7 +244,7 @@ export default function ColaPage() {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.error || "No se pudo actualizar la orden");
       }
-      const freshData = await loadOrders();
+      const freshData = await loadOrders(currentPage, selectedEstado);
       setData(freshData);
     } catch (err) {
       setError(err.message);
@@ -272,8 +276,37 @@ export default function ColaPage() {
     }
   };
 
+  const handleEstadoChange = async (estado) => {
+    setSelectedEstado(estado);
+    setCurrentPage(1);
+    setLoading(true);
+    setError("");
+    try {
+      const newData = await loadOrders(1, estado);
+      setData(newData);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePageChange = async (page) => {
+    setLoading(true);
+    setError("");
+    try {
+      const newData = await loadOrders(page, selectedEstado);
+      setData(newData);
+      setCurrentPage(page);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    loadOrders()
+    loadOrders(currentPage, selectedEstado)
       .then(setData)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -319,15 +352,9 @@ export default function ColaPage() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-lg border border-text-secondary/10 bg-background-primary p-4 text-center">
           <p className="text-2xl font-bold text-status-pending-text">
-            {data.stats.pendientes}
+            {data.stats.totalActivas}
           </p>
-          <p className="text-xs text-text-secondary mt-1">Pendientes</p>
-        </div>
-        <div className="rounded-lg border border-text-secondary/10 bg-background-primary p-4 text-center">
-          <p className="text-2xl font-bold text-status-progress-text">
-            {data.stats.preparando}
-          </p>
-          <p className="text-xs text-text-secondary mt-1">Preparando</p>
+          <p className="text-xs text-text-secondary mt-1">Órdenes activas</p>
         </div>
         <div className="rounded-lg border border-text-secondary/10 bg-background-primary p-4 text-center">
           <p className="text-2xl font-bold text-status-success-text">
@@ -341,26 +368,47 @@ export default function ColaPage() {
           </p>
           <p className="text-xs text-text-secondary mt-1">Total hoy</p>
         </div>
+        <div className="rounded-lg border border-text-secondary/10 bg-background-primary p-4 text-center">
+          <p className="text-2xl font-bold text-text-secondary">
+            {data.pagination.totalPages}
+          </p>
+          <p className="text-xs text-text-secondary mt-1">Páginas</p>
+        </div>
       </div>
 
-      {/* Pendientes */}
+      {/* Filtro */}
+      <div className="flex items-center gap-4">
+        <label className="text-sm font-medium">Filtrar por estado:</label>
+        <select
+          value={selectedEstado}
+          onChange={(e) => handleEstadoChange(e.target.value)}
+          className="px-3 py-2 border border-text-secondary/20 rounded-md bg-background-primary text-text-primary"
+        >
+          <option value="">Todos</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="preparando">Preparando</option>
+          <option value="listo">Listo</option>
+        </select>
+      </div>
+
+      {/* Órdenes */}
       <section className="space-y-3">
         <h3 className="text-lg font-semibold flex items-center gap-2">
-          🔔 Pendientes
-          {data.pendientes.length > 0 && (
-            <span className="text-xs font-normal bg-status-pending-bg text-status-pending-text rounded-full px-2 py-0.5">
-              {data.pendientes.length}
+          📋 Órdenes activas
+          {data.ordenes.length > 0 && (
+            <span className="text-xs font-normal bg-accent/10 text-accent rounded-full px-2 py-0.5">
+              {data.ordenes.length} de {data.pagination.total}
             </span>
           )}
         </h3>
 
-        {data.pendientes.length === 0 ? (
+        {data.ordenes.length === 0 ? (
           <p className="text-text-secondary text-sm">
-            No hay órdenes pendientes.
+            No hay órdenes activas en este momento.
           </p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
-            {data.pendientes.map((o) => (
+            {data.ordenes.map((o) => (
               <OrderCard
                 key={o._id}
                 o={o}
@@ -371,64 +419,27 @@ export default function ColaPage() {
             ))}
           </div>
         )}
-      </section>
 
-      {/* Preparando */}
-      <section className="space-y-3">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          🍳 En preparación
-          {data.preparando.length > 0 && (
-            <span className="text-xs font-normal bg-status-progress-bg text-status-progress-text rounded-full px-2 py-0.5">
-              {data.preparando.length}
+        {/* Paginación */}
+        {data.pagination.totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-6">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-3 py-2 text-sm border border-text-secondary/20 rounded-md hover:bg-background-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Anterior
+            </button>
+            <span className="text-sm text-text-secondary">
+              Página {currentPage} de {data.pagination.totalPages}
             </span>
-          )}
-        </h3>
-
-        {data.preparando.length === 0 ? (
-          <p className="text-text-secondary text-sm">
-            No hay órdenes en preparación.
-          </p>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {data.preparando.map((o) => (
-              <OrderCard
-                key={o._id}
-                o={o}
-                onAdvance={changeOrderState}
-                isUpdating={updatingId === o._id}
-                onShowDetail={showOrderDetail}
-              />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Listos */}
-      <section className="space-y-3">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          ✅ Listos para recoger / despachar
-          {data.listos.length > 0 && (
-            <span className="text-xs font-normal bg-status-success-bg text-status-success-text rounded-full px-2 py-0.5">
-              {data.listos.length}
-            </span>
-          )}
-        </h3>
-
-        {data.listos.length === 0 ? (
-          <p className="text-text-secondary text-sm">
-            No hay órdenes listas en este momento.
-          </p>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {data.listos.map((o) => (
-              <OrderCard
-                key={o._id}
-                o={o}
-                onAdvance={changeOrderState}
-                isUpdating={updatingId === o._id}
-                onShowDetail={showOrderDetail}
-              />
-            ))}
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === data.pagination.totalPages}
+              className="px-3 py-2 text-sm border border-text-secondary/20 rounded-md hover:bg-background-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Siguiente
+            </button>
           </div>
         )}
       </section>

@@ -184,7 +184,7 @@ Colección: resenas
 | Q15 | menuitems   | `updateMany({ restaurante_id, categoria_id }, $mul precio))`         | IDX-20                |
 | Q16 | ordenes     | `insertOne` — T2                                       | IDX-05                |
 | Q17 | ordenes     | `find({ sucursal_id, estado_actual: $in, sort: fecha })`| IDX-05               |
-| Q18 | ordenes     | `find({ sucursal_id, tipo: "delivery", estado_actual })`| IDX-07               |
+| Q18 | ordenes     | `find({ sucursal_id, tipo: "delivery", estado_actual, sort: creado_en })`| IDX-07               |
 | Q19 | ordenes     | `find({ usuario_id, estado_actual? })`                 | IDX-06                |
 | Q20 | ordenes     | `findOne({ _id })`                                     | PK                    |
 | Q21 | ordenes     | `updateOne({ _id }, $set + $push)` — T3                | PK                    |
@@ -205,7 +205,7 @@ Colección: resenas
 | IDX-02 | usuarios     | `rol + activo`                                | Compuesto    | Q03         |
 | IDX-05 | ordenes      | `sucursal_id + creado_en + estado_actual`     | Compuesto ESR| Q16,Q17,Q26 |
 | IDX-06 | ordenes      | `usuario_id + estado_actual`                  | Compuesto    | Q19         |
-| IDX-07 | ordenes      | `sucursal_id + tipo + estado_actual`          | Compuesto    | Q18         |
+| IDX-07 | ordenes      | `sucursal_id + tipo + estado_actual + creado_en` | Compuesto ESR| Q18         |
 | IDX-08 | resenas      | `restaurante_id + calificacion`               | Compuesto    | Q24         |
 | IDX-09 | menuitems    | `tags`                                        | Multikey     | Q12         |
 | IDX-10 | usuarios     | `sucursal_asignada`                           | Simple       | Q04         |

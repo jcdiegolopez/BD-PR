@@ -45,7 +45,7 @@ async function handleCustomerOrders(db, user) {
   });
 }
 
-async function handleRepartidorOrders(db, user) {
+async function handleRepartidorOrders(db, user, request) {
   const repartidor = await db
     .collection("usuarios")
     .findOne({ _id: new ObjectId(user.id) });
@@ -59,36 +59,33 @@ async function handleRepartidorOrders(db, user) {
 
   const sid = repartidor.sucursal_asignada;
 
-  const activas = await db
-    .collection("ordenes")
-    .find({
-      sucursal_id: sid,
-      tipo: "delivery",
-      estado_actual: { $in: ["listo", "en_camino"] },
-    })
-    .sort({ creado_en: 1 })
-    .toArray();
+  // Paginación y filtro
+  const url = new URL(request.url);
+  const page = Math.max(1, parseInt(url.searchParams.get("page")) || 1);
+  const limit = Math.min(50, Math.max(1, parseInt(url.searchParams.get("limit")) || 20));
+  const estado = url.searchParams.get("estado"); // opcional: listo, en_camino
 
-  const enPreparacion = await db
-    .collection("ordenes")
-    .find({
-      sucursal_id: sid,
-      tipo: "delivery",
-      estado_actual: { $in: ["pendiente", "preparando"] },
-    })
-    .sort({ creado_en: 1 })
-    .limit(20)
-    .toArray();
+  const skip = (page - 1) * limit;
 
-  const completadas = await db
+  // Órdenes delivery activas de la sucursal
+  const query = {
+    sucursal_id: sid,
+    tipo: "delivery",
+    estado_actual: { $in: ["listo", "en_camino"] },
+  };
+
+  if (estado && ["listo", "en_camino"].includes(estado)) {
+    query.estado_actual = estado;
+  }
+
+  const total = await db.collection("ordenes").countDocuments(query);
+
+  const ordenes = await db
     .collection("ordenes")
-    .find({
-      sucursal_id: sid,
-      tipo: "delivery",
-      estado_actual: "entregado",
-    })
-    .sort({ creado_en: -1 })
-    .limit(20)
+    .find(query)
+    .sort({ creado_en: -1 }) // quemado
+    .skip(skip)
+    .limit(limit)
     .toArray();
 
   const hoy = new Date();
@@ -156,18 +153,21 @@ async function handleRepartidorOrders(db, user) {
   return NextResponse.json({
     sucursalLabel: `${restName} — ${sucName}`,
     stats: {
-      activas: activas.length,
-      enPreparacion: enPreparacion.length,
+      totalActivas: total,
       entregadasHoy,
       totalDelivery,
     },
-    activas: serialize(activas),
-    enPreparacion: serialize(enPreparacion),
-    completadas: serialize(completadas),
+    ordenes: serialize(ordenes),
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
   });
 }
 
-async function handleWorkerOrders(db, user) {
+async function handleWorkerOrders(db, user, request) {
   const worker = await db
     .collection("usuarios")
     .findOne({ _id: new ObjectId(user.id) });
@@ -181,23 +181,32 @@ async function handleWorkerOrders(db, user) {
 
   const sid = worker.sucursal_asignada;
 
-  const pendientes = await db
-    .collection("ordenes")
-    .find({ sucursal_id: sid, estado_actual: "pendiente" })
-    .sort({ creado_en: 1 })
-    .toArray();
+  // Paginación y filtro
+  const url = new URL(request.url);
+  const page = Math.max(1, parseInt(url.searchParams.get("page")) || 1);
+  const limit = Math.min(50, Math.max(1, parseInt(url.searchParams.get("limit")) || 20));
+  const estado = url.searchParams.get("estado"); // opcional: pendiente, preparando, listo
 
-  const preparando = await db
-    .collection("ordenes")
-    .find({ sucursal_id: sid, estado_actual: "preparando" })
-    .sort({ creado_en: 1 })
-    .toArray();
+  const skip = (page - 1) * limit;
 
-  const listos = await db
+  // Órdenes activas de la sucursal
+  const query = {
+    sucursal_id: sid,
+    estado_actual: { $in: ["pendiente", "preparando", "listo"] },
+  };
+
+  if (estado && ["pendiente", "preparando", "listo"].includes(estado)) {
+    query.estado_actual = estado;
+  }
+
+  const total = await db.collection("ordenes").countDocuments(query);
+
+  const ordenes = await db
     .collection("ordenes")
-    .find({ sucursal_id: sid, estado_actual: "listo" })
-    .sort({ creado_en: -1 })
-    .limit(20)
+    .find(query)
+    .sort({ creado_en: -1 }) // quemado
+    .skip(skip)
+    .limit(limit)
     .toArray();
 
   const hoy = new Date();
@@ -265,14 +274,17 @@ async function handleWorkerOrders(db, user) {
   return NextResponse.json({
     sucursalLabel: `${restName} — ${sucName}`,
     stats: {
-      pendientes: pendientes.length,
-      preparando: preparando.length,
+      totalActivas: total,
       completadosHoy,
       totalHoy,
     },
-    pendientes: serialize(pendientes),
-    preparando: serialize(preparando),
-    listos: serialize(listos),
+    ordenes: serialize(ordenes),
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
   });
 }
 
@@ -285,11 +297,11 @@ const getOrdenesHandler = async (request, context, user) => {
     }
 
     if (user.rol === "repartidor") {
-      return handleRepartidorOrders(db, user);
+      return handleRepartidorOrders(db, user, request);
     }
 
     if (user.rol === "worker") {
-      return handleWorkerOrders(db, user);
+      return handleWorkerOrders(db, user, request);
     }
 
     return NextResponse.json({ error: "Rol no soportado" }, { status: 403 });
