@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
+import bcrypt from "bcryptjs";
 import { getDb } from "@/lib/mongodb";
 import { withRole } from "@/lib/middleware";
+
+const VALID_ROLES = ["admin", "owner", "worker", "repartidor", "customer"];
 
 const getUsersHandler = async (request, context, user) => {
   try {
@@ -190,3 +193,84 @@ const getUsersHandler = async (request, context, user) => {
 };
 
 export const GET = withRole(getUsersHandler, ["admin"]);
+
+const postUsuarioHandler = async (request) => {
+  try {
+    const body = await request.json();
+    const { nombre, email, password, rol, telefono, sucursal_asignada: sucursalId } = body;
+
+    if (!nombre || typeof nombre !== "string" || !nombre.trim()) {
+      return NextResponse.json({ error: "nombre es obligatorio" }, { status: 400 });
+    }
+
+    if (!email || typeof email !== "string" || !email.trim()) {
+      return NextResponse.json({ error: "email es obligatorio" }, { status: 400 });
+    }
+
+    if (!password || typeof password !== "string" || password.length < 6) {
+      return NextResponse.json({ error: "password debe tener al menos 6 caracteres" }, { status: 400 });
+    }
+
+    if (!VALID_ROLES.includes(rol)) {
+      return NextResponse.json({ error: "rol invalido" }, { status: 400 });
+    }
+
+    const db = await getDb();
+
+    const existing = await db.collection("usuarios").findOne({ email: email.trim().toLowerCase() });
+    if (existing) {
+      return NextResponse.json({ error: "El email ya esta registrado" }, { status: 409 });
+    }
+
+    let sucursalAsignada = null;
+    if (["worker", "repartidor"].includes(rol)) {
+      if (!ObjectId.isValid(sucursalId)) {
+        return NextResponse.json(
+          { error: "sucursal_asignada es obligatoria para worker/repartidor" },
+          { status: 400 },
+        );
+      }
+
+      const sucursal = await db.collection("sucursales").findOne({ _id: new ObjectId(sucursalId) });
+      if (!sucursal) {
+        return NextResponse.json({ error: "Sucursal no encontrada" }, { status: 404 });
+      }
+
+      sucursalAsignada = sucursal._id;
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    const doc = {
+      nombre: nombre.trim(),
+      email: email.trim().toLowerCase(),
+      password_hash: passwordHash,
+      rol,
+      telefono: telefono?.trim() || null,
+      sucursal_asignada: sucursalAsignada,
+      foto_perfil_id: null,
+      direcciones_guardadas: rol === "customer" ? [] : undefined,
+      activo: true,
+      creado_en: new Date(),
+    };
+
+    const result = await db.collection("usuarios").insertOne(doc);
+
+    return NextResponse.json(
+      {
+        _id: String(result.insertedId),
+        nombre: doc.nombre,
+        email: doc.email,
+        rol: doc.rol,
+        activo: doc.activo,
+      },
+      { status: 201 },
+    );
+  } catch (error) {
+    console.error("Error en POST /api/usuarios:", error);
+    return NextResponse.json({ error: "No se pudo crear el usuario" }, { status: 500 });
+  }
+};
+
+export const POST = withRole(postUsuarioHandler, ["admin"]);

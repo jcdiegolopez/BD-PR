@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 const ESTADO_STYLE = {
   pendiente: "bg-status-pending-bg text-status-pending-text",
@@ -73,9 +74,10 @@ export default function MisOrdenesPage() {
       ) : (
         <div className="space-y-3">
           {ordenes.map((o) => (
-            <div
+            <Link
+              href={`/mis-ordenes/${o._id}`}
               key={o._id}
-              className="rounded-lg border border-text-secondary/10 bg-background-primary p-4 space-y-2"
+              className="block rounded-lg border border-text-secondary/10 bg-background-primary p-4 space-y-2 transition-colors duration-200 hover:border-accent/30"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
@@ -123,7 +125,7 @@ export default function MisOrdenesPage() {
                   Nota: {o.notas}
                 </p>
               )}
-            </div>
+            </Link>
           ))}
         </div>
       )}

@@ -1,27 +1,35 @@
-import { getDb } from "@/lib/mongodb";
-import { requireSessionUser } from "@/lib/permissions";
-import { ObjectId } from "mongodb";
+"use client";
 
-export const metadata = {
-  title: "Sucursales — Owner",
-};
+import { useEffect, useState } from "react";
 
-export default async function SucursalesPage() {
-  const user = await requireSessionUser(["owner"]);
-  const db = await getDb();
+export default function SucursalesPage() {
+  const [sucursales, setSucursales] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const restaurantes = await db
-    .collection("restaurantes")
-    .find({ propietario_id: new ObjectId(user.id), activo: true })
-    .toArray();
+  useEffect(() => {
+    fetch("/api/owner/sucursales")
+      .then((res) => {
+        if (!res.ok) throw new Error("Error al cargar sucursales");
+        return res.json();
+      })
+      .then(setSucursales)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const restIds = restaurantes.map((r) => r._id);
-  const restMap = new Map(restaurantes.map((r) => [String(r._id), r]));
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-48 animate-pulse rounded bg-background-secondary" />
+        <div className="h-80 animate-pulse rounded-lg bg-background-secondary" />
+      </div>
+    );
+  }
 
-  const sucursales = await db
-    .collection("sucursales")
-    .find({ restaurante_id: { $in: restIds }, activa: true })
-    .toArray();
+  if (error) {
+    return <p className="text-accent">{error}</p>;
+  }
 
   return (
     <div className="space-y-8">
@@ -38,10 +46,9 @@ export default async function SucursalesPage() {
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {sucursales.map((s) => {
-          const rest = restMap.get(String(s.restaurante_id));
           return (
             <div
-              key={String(s._id)}
+              key={s._id}
               className="rounded-lg border border-text-secondary/10 bg-background-secondary p-6 space-y-3"
             >
               <div className="space-y-1">
@@ -49,7 +56,7 @@ export default async function SucursalesPage() {
                   {s.nombre}
                 </p>
                 <span className="inline-block rounded-md bg-accent px-2 py-0.5 text-xs font-medium text-text-contrast">
-                  {rest?.nombre}
+                  {s.restaurante_nombre}
                 </span>
               </div>
 

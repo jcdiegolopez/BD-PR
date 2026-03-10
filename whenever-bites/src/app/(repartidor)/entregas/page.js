@@ -39,7 +39,8 @@ function getRepartidorActionLabel(nextState) {
   return "";
 }
 
-function OrderCard({ o, showAddress = false, onAdvance, isUpdating = false }) {
+
+function OrderCard({ o, showAddress = false, onAdvance, isUpdating = false, onShowDetail }) {
   const nextState = getRepartidorNextState(o);
 
   return (
@@ -99,16 +100,25 @@ function OrderCard({ o, showAddress = false, onAdvance, isUpdating = false }) {
         <p className="text-xs text-text-secondary italic">⚠️ {o.notas}</p>
       )}
 
-      {nextState && (
+      <div className="flex gap-2 mt-2">
         <button
           type="button"
-          onClick={() => onAdvance(o._id, nextState)}
-          disabled={isUpdating}
-          className="w-full rounded-md bg-accent px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          onClick={() => onShowDetail(o._id)}
+          className="flex-1 rounded-md border border-accent text-accent px-3 py-2 text-sm font-medium hover:bg-accent/10"
         >
-          {isUpdating ? "Actualizando..." : getRepartidorActionLabel(nextState)}
+          Ver detalle
         </button>
-      )}
+        {nextState && (
+          <button
+            type="button"
+            onClick={() => onAdvance(o._id, nextState)}
+            disabled={isUpdating}
+            className="flex-1 rounded-md bg-accent px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isUpdating ? "Actualizando..." : getRepartidorActionLabel(nextState)}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -150,12 +160,130 @@ export default function EntregasPage() {
         throw new Error(errData.error || "No se pudo actualizar la orden");
       }
 
+import { useRef } from "react";
+
+function DetailModal({ open, onClose, order }) {
+  if (!open || !order) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-background-primary rounded-lg p-6 w-full max-w-md shadow-lg relative">
+        <button
+          className="absolute top-2 right-2 text-text-secondary hover:text-accent"
+          onClick={onClose}
+        >
+          ×
+        </button>
+        <h2 className="text-xl font-bold mb-2">Detalle de la orden</h2>
+        <div className="mb-2 text-sm text-text-secondary">
+          <div><b>ID:</b> {order._id}</div>
+          <div><b>Restaurante:</b> {order.restaurante || "-"}</div>
+          <div><b>Sucursal:</b> {order.sucursal || "-"}</div>
+          <div><b>Tipo:</b> {order.tipo}</div>
+          <div><b>Estado actual:</b> {order.estado_actual}</div>
+          <div><b>Cliente:</b> {order.cliente || "-"}</div>
+          <div><b>Teléfono:</b> {order.cliente_tel || "-"}</div>
+          <div><b>Creado en:</b> {formatDate(order.creado_en)}</div>
+        </div>
+        <div className="mb-2">
+          <b>Items:</b>
+          <ul className="list-disc pl-5 text-sm">
+            {order.items?.map((it, i) => (
+              <li key={i}>
+                {it.cantidad}× {it.nombre} — Q{Number(it.subtotal).toFixed(2)}
+              </li>
+            ))}
+          </ul>
+        </div>
+        {order.direccion_entrega && (
+          <div className="mb-2 text-sm">
+            <b>Dirección de entrega:</b> {order.direccion_entrega}
+          </div>
+        )}
+        {order.notas && (
+          <div className="mb-2 text-sm text-accent">
+            <b>Notas:</b> {order.notas}
+          </div>
+        )}
+        {order.historial_estados && (
+          <div className="mb-2 text-sm">
+            <b>Historial de estados:</b>
+            <ul className="list-disc pl-5">
+              {order.historial_estados.map((h, i) => (
+                <li key={i}>
+                  {h.estado} — {formatDate(h.timestamp)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function EntregasPage() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [updatingId, setUpdatingId] = useState("");
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailOrder, setDetailOrder] = useState(null);
+  const detailCache = useRef({});
+
+  const loadOrders = async () => {
+    const res = await fetch("/api/ordenes");
+    if (res.status === 400) {
+      const d = await res.json();
+      throw new Error(
+        d.error || "No tienes una sucursal asignada. Contacta al administrador.",
+      );
+    }
+    if (!res.ok) throw new Error("Error al cargar entregas");
+    return res.json();
+  };
+
+  const changeOrderState = async (orderId, nextState) => {
+    setUpdatingId(orderId);
+    setError("");
+    try {
+      const res = await fetch(`/api/ordenes/${orderId}/estado`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nextState }),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "No se pudo actualizar la orden");
+      }
       const freshData = await loadOrders();
       setData(freshData);
     } catch (err) {
       setError(err.message);
     } finally {
       setUpdatingId("");
+    }
+  };
+
+  const showOrderDetail = async (orderId) => {
+    setError("");
+    setDetailOrder(null);
+    setDetailOpen(true);
+    // Cache para evitar fetch repetidos
+    if (detailCache.current[orderId]) {
+      setDetailOrder(detailCache.current[orderId]);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/ordenes/${orderId}`);
+      if (!res.ok) {
+        throw new Error("No se pudo cargar el detalle de la orden");
+      }
+      const order = await res.json();
+      detailCache.current[orderId] = order;
+      setDetailOrder(order);
+    } catch (err) {
+      setError(err.message);
+      setDetailOpen(false);
     }
   };
 
@@ -193,6 +321,7 @@ export default function EntregasPage() {
 
   return (
     <div className="space-y-8">
+      <DetailModal open={detailOpen} onClose={() => setDetailOpen(false)} order={detailOrder} />
       <div>
         <h2 className="text-2xl font-semibold">Entregas</h2>
         <p className="text-text-secondary text-sm mt-1">
@@ -250,6 +379,7 @@ export default function EntregasPage() {
                 showAddress
                 onAdvance={changeOrderState}
                 isUpdating={updatingId === o._id}
+                onShowDetail={showOrderDetail}
               />
             ))}
           </div>
@@ -279,6 +409,7 @@ export default function EntregasPage() {
                 showAddress
                 onAdvance={changeOrderState}
                 isUpdating={updatingId === o._id}
+                onShowDetail={showOrderDetail}
               />
             ))}
           </div>
@@ -298,8 +429,8 @@ export default function EntregasPage() {
               <OrderCard
                 key={o._id}
                 o={o}
-                onAdvance={changeOrderState}
-                isUpdating={updatingId === o._id}
+                showAddress
+                onShowDetail={showOrderDetail}
               />
             ))}
           </div>

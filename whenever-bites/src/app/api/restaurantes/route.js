@@ -9,12 +9,10 @@ function parsePositiveInt(value, fallback) {
   if (value === null || value === undefined || value === "") {
     return fallback;
   }
-
   const parsed = Number.parseInt(value, 10);
   if (Number.isNaN(parsed) || parsed < 1) {
     return null;
   }
-
   return parsed;
 }
 
@@ -47,11 +45,14 @@ export async function GET(request) {
       );
     }
 
-    if (search && sortParam) {
-      return NextResponse.json(
-        { error: "search no se puede combinar con sort" },
-        { status: 400 },
-      );
+    // Si viene search, solo permitimos búsqueda por texto, sin filtros ni sort
+    if (search) {
+      if (sortParam || tipoCocinaId || tags.length > 0) {
+        return NextResponse.json(
+          { error: "search no se puede combinar con filtros ni sort" },
+          { status: 400 },
+        );
+      }
     }
 
     if (sortParam && !["calificacion_promedio", "nombre"].includes(sortParam)) {
@@ -70,34 +71,31 @@ export async function GET(request) {
 
     const limit = Math.min(requestedLimit, MAX_LIMIT);
     const skip = (page - 1) * limit;
-
     const db = await getDb();
-    const filter = { activo: true };
 
-    if (tipoCocinaId) {
-      filter.tipo_cocina_id = new ObjectId(tipoCocinaId);
-    }
-
-    if (tags.length > 0) {
-      filter.tags = { $in: tags };
-    }
-
-    if (search) {
-      filter.$text = { $search: search };
-    }
-
-    const findOptions = {};
+    let filter = { activo: true };
+    let findOptions = {};
     let sort = { calificacion_promedio: -1 };
 
     if (search) {
+      // Solo búsqueda por texto
+      filter = { activo: true, $text: { $search: search } };
       findOptions.projection = { score: { $meta: "textScore" } };
       sort = { score: { $meta: "textScore" } };
-    } else if (sortParam === "nombre") {
-      sort = { nombre: 1 };
+    } else {
+      // Solo filtros
+      if (tipoCocinaId) {
+        filter.tipo_cocina_id = new ObjectId(tipoCocinaId);
+      }
+      if (tags.length > 0) {
+        filter.tags = { $in: tags };
+      }
+      if (sortParam === "nombre") {
+        sort = { nombre: 1 };
+      }
     }
 
     const total = await db.collection("restaurantes").countDocuments(filter);
-
     const restaurantes = await db
       .collection("restaurantes")
       .find(filter, findOptions)
@@ -115,7 +113,6 @@ export async function GET(request) {
     );
 
     const restIds = restaurantes.map((restaurante) => restaurante._id);
-
     const sucursales = await db
       .collection("sucursales")
       .find({ restaurante_id: { $in: restIds }, activa: true })
@@ -127,7 +124,6 @@ export async function GET(request) {
       if (!sucursalesPorRestaurante.has(key)) {
         sucursalesPorRestaurante.set(key, []);
       }
-
       sucursalesPorRestaurante.get(key).push({
         _id: String(sucursal._id),
         nombre: sucursal.nombre,

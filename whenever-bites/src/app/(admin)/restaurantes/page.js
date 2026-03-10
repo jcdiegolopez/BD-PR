@@ -1,52 +1,34 @@
-import { getDb } from "@/lib/mongodb";
-import { requireSessionUser } from "@/lib/permissions";
+"use client";
 
-export const metadata = {
-  title: "Restaurantes — Admin",
-};
+import { useEffect, useState } from "react";
 
-export default async function RestaurantesPage() {
-  await requireSessionUser(["admin"]);
-  const db = await getDb();
+export default function RestaurantesPage() {
+  const [restaurantes, setRestaurantes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const restaurantes = await db
-    .collection("restaurantes")
-    .find({})
-    .sort({ creado_en: -1 })
-    .toArray();
+  useEffect(() => {
+    fetch("/api/admin/restaurantes")
+      .then((res) => {
+        if (!res.ok) throw new Error("Error al cargar restaurantes");
+        return res.json();
+      })
+      .then(setRestaurantes)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const ownerIds = restaurantes
-    .map((restaurante) => restaurante.propietario_id)
-    .filter(Boolean);
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-64 animate-pulse rounded bg-background-secondary" />
+        <div className="h-96 animate-pulse rounded-lg bg-background-secondary" />
+      </div>
+    );
+  }
 
-  const owners = ownerIds.length
-    ? await db
-        .collection("usuarios")
-        .find({ _id: { $in: ownerIds } })
-        .project({ nombre: 1, email: 1 })
-        .toArray()
-    : [];
-
-  const ownerMap = new Map(
-    owners.map((owner) => [String(owner._id), owner]),
-  );
-
-  const restIds = restaurantes.map((restaurante) => restaurante._id);
-
-  const sucursales = restIds.length
-    ? await db
-        .collection("sucursales")
-        .find({ restaurante_id: { $in: restIds } })
-        .toArray()
-    : [];
-
-  const sucursalesPorRestaurante = new Map();
-  for (const sucursal of sucursales) {
-    const key = String(sucursal.restaurante_id);
-    if (!sucursalesPorRestaurante.has(key)) {
-      sucursalesPorRestaurante.set(key, []);
-    }
-    sucursalesPorRestaurante.get(key).push(sucursal);
+  if (error) {
+    return <p className="text-accent">{error}</p>;
   }
 
   return (
@@ -64,13 +46,11 @@ export default async function RestaurantesPage() {
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {restaurantes.map((restaurante) => {
-            const owner = ownerMap.get(String(restaurante.propietario_id));
-            const listaSucursales =
-              sucursalesPorRestaurante.get(String(restaurante._id)) || [];
+            const listaSucursales = restaurante.sucursales || [];
 
             return (
               <article
-                key={String(restaurante._id)}
+                key={restaurante._id}
                 className="rounded-lg border border-text-secondary/10 bg-background-secondary p-6 space-y-3"
               >
                 <div className="space-y-1">
@@ -96,13 +76,13 @@ export default async function RestaurantesPage() {
                 <div className="space-y-1 text-sm text-text-secondary">
                   <p>
                     <span className="font-medium text-text-primary">Owner:</span>{" "}
-                    {owner?.nombre || "Sin asignar"}
+                    {restaurante.owner_nombre}
                   </p>
                   <p>
                     <span className="font-medium text-text-primary">
                       Contacto:
                     </span>{" "}
-                    {owner?.email || "-"}
+                    {restaurante.owner_email}
                   </p>
                   <p>
                     <span className="font-medium text-text-primary">
@@ -124,10 +104,10 @@ export default async function RestaurantesPage() {
                   <div className="border-t border-text-secondary/10 pt-3 space-y-1">
                     {listaSucursales.slice(0, 3).map((sucursal) => (
                       <p
-                        key={String(sucursal._id)}
+                        key={sucursal._id}
                         className="text-xs text-text-secondary"
                       >
-                        {sucursal.nombre} - {sucursal.direccion?.zona || "Sin zona"}
+                        {sucursal.nombre} - {sucursal.zona}
                       </p>
                     ))}
                     {listaSucursales.length > 3 && (

@@ -1,34 +1,41 @@
-import { getDb } from "@/lib/mongodb";
-import { requireSessionUser } from "@/lib/permissions";
-import { ObjectId } from "mongodb";
+"use client";
 
-export const metadata = {
-  title: "Menú — Owner",
-};
+import { useEffect, useState } from "react";
+import { BulkUploadForm, PrecioAdjustForm } from "@/components/owner/MenuForms";
+export default function MenuPage() {
+  const [restaurantes, setRestaurantes] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-export default async function MenuPage() {
-  const user = await requireSessionUser(["owner"]);
-  const db = await getDb();
+  useEffect(() => {
+    fetch("/api/owner/menu")
+      .then((res) => {
+        if (!res.ok) throw new Error("Error al cargar menu");
+        return res.json();
+      })
+      .then((payload) => {
+        setRestaurantes(payload.restaurantes || []);
+        setCategorias(payload.categorias || []);
+        setItems(payload.items || []);
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const restaurantes = await db
-    .collection("restaurantes")
-    .find({ propietario_id: new ObjectId(user.id), activo: true })
-    .toArray();
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-64 animate-pulse rounded bg-background-secondary" />
+        <div className="h-96 animate-pulse rounded-lg bg-background-secondary" />
+      </div>
+    );
+  }
 
-  const restIds = restaurantes.map((r) => r._id);
-
-  const categorias = await db
-    .collection("categorias")
-    .find({ restaurante_id: { $in: restIds }, activa: true })
-    .sort({ orden_display: 1 })
-    .toArray();
-
-  const items = await db
-    .collection("menuitems")
-    .find({ restaurante_id: { $in: restIds }, disponible: true })
-    .toArray();
-
-  const catMap = new Map(categorias.map((c) => [String(c._id), c]));
+  if (error) {
+    return <p className="text-accent">{error}</p>;
+  }
 
   return (
     <div className="space-y-8">
@@ -114,6 +121,17 @@ export default async function MenuPage() {
           </div>
         );
       })}
+
+      {/* Bulk upload and price adjustment forms */}
+      {restaurantes.length > 0 && (
+        <div className="space-y-6 border-t border-text-secondary/10 pt-8">
+          <h3 className="text-xl font-semibold">Herramientas</h3>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <BulkUploadForm restaurantes={restaurantes} categorias={categorias} />
+            <PrecioAdjustForm restaurantes={restaurantes} categorias={categorias} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

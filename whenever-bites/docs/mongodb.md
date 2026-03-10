@@ -181,7 +181,7 @@ Colección: resenas
 | Q12 | menuitems   | `find({ restaurante_id, categoria_id?, disponible })`  | IDX-20                |
 | Q13 | menuitems   | `$text { $search }`                                    | IDX-13                |
 | Q14 | menuitems   | `insertMany`                                           | IDX-20                |
-| Q15 | menuitems   | `updateMany({ restaurante_id, categoria_id })`         | IDX-20                |
+| Q15 | menuitems   | `updateMany({ restaurante_id, categoria_id }, $mul precio))`         | IDX-20                |
 | Q16 | ordenes     | `insertOne` — T2                                       | IDX-05                |
 | Q17 | ordenes     | `find({ sucursal_id, estado_actual: $in, sort: fecha })`| IDX-05               |
 | Q18 | ordenes     | `find({ sucursal_id, tipo: "delivery", estado_actual })`| IDX-07               |

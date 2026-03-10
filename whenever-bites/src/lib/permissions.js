@@ -36,6 +36,7 @@ export const ROLE_NAV_ITEMS = {
     { href: "/home", label: "Inicio" },
     { href: "/mis-ordenes", label: "Mis órdenes" },
     { href: "/mis-resenas", label: "Mis reseñas" },
+    { href: "/mis-direcciones", label: "Mis direcciones" },
   ],
 };
 
