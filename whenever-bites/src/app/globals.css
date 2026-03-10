@@ -3,6 +3,14 @@
 
 body {
   @apply bg-background-primary text-text-primary font-sans antialiased;
+  background-image:
+    radial-gradient(circle at top right, rgba(214, 43, 66, 0.1), transparent 24%),
+    radial-gradient(circle at bottom left, rgba(166, 32, 51, 0.08), transparent 28%);
+}
+
+::selection {
+  background: #d62b42;
+  color: #fff7f2;
 }
 
 

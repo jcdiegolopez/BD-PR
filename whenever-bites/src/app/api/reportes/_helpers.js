@@ -52,17 +52,21 @@ export async function resolveScopedRestaurants(db, user, request) {
     return { ok: false, status: 400, error: "restaurante_id invalido" };
   }
 
+  // Para owner, filtrar solo sus restaurantes
   const ownerFilter = user.rol === "owner"
     ? { propietario_id: new ObjectId(user.id) }
     : {};
 
+  // Si se especifica un restaurante en la solicitud, validar que existe
   const requestedIdFilter = restauranteId
     ? { _id: new ObjectId(restauranteId) }
     : {};
 
+  const query = { ...ownerFilter, ...requestedIdFilter };
+
   const restaurantes = await db
     .collection("restaurantes")
-    .find({ ...ownerFilter, ...requestedIdFilter })
+    .find(query)
     .project({ nombre: 1 })
     .toArray();
 

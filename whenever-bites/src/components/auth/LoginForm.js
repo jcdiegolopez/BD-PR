@@ -51,19 +51,14 @@ export default function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Error */}
       {error && (
         <div className="rounded-md bg-accent/10 px-4 py-3 text-sm text-accent">
           {error}
         </div>
       )}
 
-      {/* Email */}
       <div className="space-y-2">
-        <label
-          htmlFor="email"
-          className="block text-sm font-medium text-text-primary"
-        >
+        <label htmlFor="email" className="block text-sm font-medium text-text-primary">
           Correo electrónico
         </label>
         <input
@@ -74,16 +69,12 @@ export default function LoginForm() {
           placeholder="tu@email.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="h-12 w-full rounded-md border border-text-secondary/20 bg-background-secondary px-4 text-text-primary placeholder:text-text-secondary/60 transition-colors duration-200 focus:border-accent focus:ring-1 focus:ring-accent"
+          className="h-12 w-full rounded-md border border-text-secondary/20 bg-background-primary px-4 text-text-primary placeholder:text-text-secondary/60 transition-colors duration-200 focus:border-accent focus:ring-1 focus:ring-accent"
         />
       </div>
 
-      {/* Password */}
       <div className="space-y-2">
-        <label
-          htmlFor="password"
-          className="block text-sm font-medium text-text-primary"
-        >
+        <label htmlFor="password" className="block text-sm font-medium text-text-primary">
           Contraseña
         </label>
         <div className="relative">
@@ -95,7 +86,7 @@ export default function LoginForm() {
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="h-12 w-full rounded-md border border-text-secondary/20 bg-background-secondary px-4 pr-12 text-text-primary placeholder:text-text-secondary/60 transition-colors duration-200 focus:border-accent focus:ring-1 focus:ring-accent"
+            className="h-12 w-full rounded-md border border-text-secondary/20 bg-background-primary px-4 pr-12 text-text-primary placeholder:text-text-secondary/60 transition-colors duration-200 focus:border-accent focus:ring-1 focus:ring-accent"
           />
           <button
             type="button"
@@ -117,14 +108,13 @@ export default function LoginForm() {
         </div>
       </div>
 
-      {/* Submit */}
       <Button
         type="submit"
         variant="primary"
         disabled={loading}
         className="w-full disabled:opacity-50"
       >
-        {loading ? "Ingresando…" : "Iniciar sesión"}
+        {loading ? "Ingresando..." : "Iniciar sesión"}
       </Button>
     </form>
   );

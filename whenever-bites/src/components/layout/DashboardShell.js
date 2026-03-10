@@ -10,7 +10,7 @@ export default function DashboardShell({ user, children }) {
       <RoleNavigation user={user} items={navItems} roleLabel={roleLabel} />
 
       <div className="flex flex-1 flex-col">
-        <header className="flex h-16 items-center justify-between border-b border-text-secondary/10 bg-background-primary px-6 md:px-10">
+        <header className="flex h-16 items-center justify-between border-b border-accent/10 bg-background-primary px-6 md:px-10">
           <p className="text-sm text-text-secondary">
             <span className="font-medium text-text-primary">{roleLabel}</span>
             {" · "}

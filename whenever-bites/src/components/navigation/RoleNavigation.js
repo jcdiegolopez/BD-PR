@@ -13,7 +13,7 @@ export default function RoleNavigation({ user, items = [], roleLabel }) {
       {/* ── Mobile toggle button ── */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed left-4 top-4 z-40 flex h-10 w-10 items-center justify-center rounded-md bg-background-secondary text-text-primary transition-colors duration-200 hover:bg-accent hover:text-text-contrast md:hidden"
+        className="fixed left-4 top-4 z-40 flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-text-contrast shadow-lg shadow-accent/25 transition-colors duration-200 hover:bg-accent-dark md:hidden"
         aria-label="Abrir menú"
       >
         <svg
@@ -42,19 +42,19 @@ export default function RoleNavigation({ user, items = [], roleLabel }) {
 
       {/* ── Sidebar ── */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-text-secondary/10 bg-background-secondary transition-transform duration-300 md:static md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-accent-dark/20 bg-background-accent text-text-contrast shadow-[18px_0_40px_-28px_rgba(96,13,26,0.65)] transition-transform duration-300 md:static md:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* Brand */}
-        <div className="flex h-16 items-center justify-between px-6">
-          <Link href="/" className="text-xl font-semibold">
-            Whenever<span className="text-accent">Bites</span>
-            <span className="text-accent-dark">.</span>
+        <div className="flex h-16 items-center justify-between border-b border-white/10 px-6">
+          <Link href="/" className="text-xl font-semibold text-text-contrast">
+            Whenever<span className="text-background-primary">Bites</span>
+            <span className="text-[#FFD8B5]">.</span>
           </Link>
           <button
             onClick={() => setOpen(false)}
-            className="flex h-8 w-8 items-center justify-center rounded-md text-text-secondary transition-colors duration-200 hover:text-text-primary md:hidden"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-text-contrast/75 transition-colors duration-200 hover:bg-white/10 hover:text-text-contrast md:hidden"
             aria-label="Cerrar menú"
           >
             <svg
@@ -86,8 +86,8 @@ export default function RoleNavigation({ user, items = [], roleLabel }) {
                 onClick={() => setOpen(false)}
                 className={`flex items-center rounded-md px-3 py-2.5 text-sm font-medium transition-colors duration-200 ${
                   isActive
-                    ? "bg-accent text-text-contrast"
-                    : "text-text-primary hover:bg-background-primary"
+                    ? "bg-background-primary text-accent shadow-sm"
+                    : "text-text-contrast/90 hover:bg-white/10 hover:text-text-contrast"
                 }`}
               >
                 {item.label}
@@ -97,16 +97,16 @@ export default function RoleNavigation({ user, items = [], roleLabel }) {
         </nav>
 
         {/* User info + logout */}
-        <div className="border-t border-text-secondary/10 px-4 py-4">
+        <div className="border-t border-white/10 px-4 py-4">
           <div className="mb-3 space-y-0.5">
-            <p className="truncate text-sm font-medium text-text-primary">
+            <p className="truncate text-sm font-medium text-text-contrast">
               {user.email}
             </p>
-            <p className="text-xs text-accent">{roleLabel}</p>
+            <p className="text-xs text-[#FFD8B5]">{roleLabel}</p>
           </div>
           <a
             href="/api/auth/logout"
-            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-text-secondary transition-colors duration-200 hover:bg-background-primary hover:text-accent"
+            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-text-contrast/80 transition-colors duration-200 hover:bg-white/10 hover:text-text-contrast"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

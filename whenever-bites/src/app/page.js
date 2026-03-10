@@ -2,95 +2,101 @@ import Button from "@/components/ui/Button";
 
 export default function Home() {
   return (
-    <main className="mx-auto max-w-screen-xl space-y-32 px-6 py-16 md:py-24">
-
-      {/* ── Hero: nombre gigante estilo editorial ── */}
-      <section className="space-y-10">
-        <h1 className="text-6xl font-semibold leading-none md:text-8xl lg:text-9xl">
+    <main className="mx-auto max-w-7xl space-y-24 px-6 py-16 md:py-32">
+      {/* ── Hero: nombre gigante + descripción ── */}
+      <section className="space-y-8">
+        <h1 className="text-7xl font-bold leading-tight md:text-8xl lg:text-9xl">
           Whenever
           <br />
-          <span className="text-accent">Bites</span><span className="text-accent-dark">.</span>
+          <span className="text-accent">Bites</span><span className="text-accent">.</span>
         </h1>
-        <p className="max-w-xl text-xl leading-relaxed text-text-secondary md:text-2xl">
+        <p className="max-w-2xl text-xl leading-relaxed text-text-secondary md:text-2xl">
           La plataforma que conecta clientes, restaurantes y equipos de trabajo
           en una sola experiencia operativa.
         </p>
         <div className="flex flex-wrap gap-4">
-          <Button href="/login" variant="secondary">
+          <Button href="/login" variant="primary">
             Iniciar sesión
           </Button>
+          <a
+            href="#features"
+            className="inline-flex h-12 items-center justify-center rounded-md border-2 border-accent px-6 text-sm font-semibold text-accent transition-all hover:bg-accent hover:text-text-contrast"
+          >
+            Conocer más
+          </a>
         </div>
       </section>
 
       <section>
-        <div className="h-1 w-24 rounded-full bg-accent" />
+        <div className="h-1 w-32 rounded-full bg-accent" />
       </section>
 
-      {/* ── Statement de una línea ── */}
+      
+      {/* ── Statement principal ── */}
       <section>
-        <p className="max-w-4xl text-3xl font-medium leading-snug md:text-4xl">
+        <p className="max-w-4xl text-3xl font-semibold leading-snug md:text-4xl">
           Software de delivery pensado para <span className="text-accent">escalar operaciones gastronómicas</span>
           sin perder control, velocidad ni calidad de servicio.
         </p>
       </section>
 
-      {/* ── Métricas / números como ancla visual ── */}
-      <section className="grid gap-6 md:grid-cols-3">
-        <div className="space-y-2 rounded-lg bg-background-accent p-8">
-          <p className="text-5xl font-semibold text-text-contrast md:text-6xl">5</p>
-          <p className="text-lg font-medium text-text-contrast">Roles diferenciados</p>
-          <p className="text-sm text-text-contrast/80">
+      {/* ── Métricas / números ── */}
+      <section id="features" className="grid gap-6 md:grid-cols-3">
+        <div className="space-y-4 rounded-xl border-2 border-accent/30 bg-background-accent/5 p-8">
+          <p className="text-6xl font-bold text-accent md:text-7xl">5</p>
+          <p className="text-lg font-semibold text-text-primary">Roles diferenciados</p>
+          <p className="text-sm leading-relaxed text-text-secondary">
             Customer, worker, repartidor, owner y admin — cada uno con flujos
             y permisos propios.
           </p>
         </div>
-        <div className="space-y-2 rounded-lg bg-background-accent-dark p-8">
-          <p className="text-5xl font-semibold text-text-contrast md:text-6xl">27</p>
-          <p className="text-lg font-medium text-text-contrast">Queries operativas</p>
-          <p className="text-sm text-text-contrast/80">
+        <div className="space-y-4 rounded-xl border-2 border-accent/30 bg-background-accent/5 p-8">
+          <p className="text-6xl font-bold text-accent md:text-7xl">27</p>
+          <p className="text-lg font-semibold text-text-primary">Queries operativas</p>
+          <p className="text-sm leading-relaxed text-text-secondary">
             Consultas optimizadas con índices compuestos, multikey, texto
             y geoespaciales.
           </p>
         </div>
-        <div className="space-y-2 rounded-lg bg-background-accent-light p-8">
-          <p className="text-5xl font-semibold text-text-contrast md:text-6xl">4</p>
-          <p className="text-lg font-medium text-text-contrast">Reportes analíticos</p>
-          <p className="text-sm text-text-contrast/80">
+        <div className="space-y-4 rounded-xl border-2 border-accent/30 bg-background-accent/5 p-8">
+          <p className="text-6xl font-bold text-accent md:text-7xl">4</p>
+          <p className="text-lg font-semibold text-text-primary">Reportes analíticos</p>
+          <p className="text-sm leading-relaxed text-text-secondary">
             Aggregation pipelines para ventas, platillos top, tiempos
             y calificaciones.
           </p>
         </div>
       </section>
 
-      {/* ── A quién está dirigido: lista numerada, no cards ── */}
+      {/* ── A quién está dirigido ── */}
       <section className="grid gap-16 md:grid-cols-2">
         <div className="space-y-4">
-          <p className="text-sm font-medium text-accent">A quién está dirigido</p>
-          <h2 className="text-3xl font-semibold leading-snug md:text-4xl">
+          <p className="text-sm font-semibold uppercase tracking-widest text-accent">A quién está dirigido</p>
+          <h2 className="text-4xl font-bold leading-snug md:text-5xl">
             Experiencias separadas para cada perfil en la cadena operativa
           </h2>
         </div>
-        <div className="space-y-10">
-          <div className="space-y-2 border-l-4 border-accent pl-6">
-            <p className="text-xs font-semibold text-accent">01</p>
-            <h3 className="text-xl font-semibold">Clientes</h3>
-            <p className="text-sm text-text-secondary">
+        <div className="space-y-8">
+          <div className="space-y-3 rounded-xl border-l-4 border-accent bg-background-primary p-6">
+            <p className="text-xs font-bold uppercase text-accent">01 • Clientes</p>
+            <h3 className="text-2xl font-bold">Explora y ordena</h3>
+            <p className="text-sm leading-relaxed text-text-secondary">
               Búsqueda de restaurantes, exploración de menús, pedidos y seguimiento
               en tiempo real.
             </p>
           </div>
-          <div className="space-y-2 border-l-4 border-accent-dark pl-6">
-            <p className="text-xs font-semibold text-accent-dark">02</p>
-            <h3 className="text-xl font-semibold">Restaurantes y empresas</h3>
-            <p className="text-sm text-text-secondary">
+          <div className="space-y-3 rounded-xl border-l-4 border-accent bg-background-primary p-6">
+            <p className="text-xs font-bold uppercase text-accent">02 • Restaurantes</p>
+            <h3 className="text-2xl font-bold">Gestiona operaciones</h3>
+            <p className="text-sm leading-relaxed text-text-secondary">
               Gestión de catálogo, control de sucursales y operación diaria con
               foco en eficiencia.
             </p>
           </div>
-          <div className="space-y-2 border-l-4 border-accent-light pl-6">
-            <p className="text-xs font-semibold text-accent-light">03</p>
-            <h3 className="text-xl font-semibold">Trabajadores y repartidores</h3>
-            <p className="text-sm text-text-secondary">
+          <div className="space-y-3 rounded-xl border-l-4 border-accent bg-background-primary p-6">
+            <p className="text-xs font-bold uppercase text-accent">03 • Operaciones</p>
+            <h3 className="text-2xl font-bold">Cocina y reparto</h3>
+            <p className="text-sm leading-relaxed text-text-secondary">
               Flujos simples para cocina y reparto con estados de órdenes
               consistentes y trazables.
             </p>
@@ -98,58 +104,56 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Restaurantes destacados: tabla limpia, no cards ── */}
-  
-      {/* ── Bloque full-width con fondo secondary ── */}
-      <section className="rounded-lg bg-background-accent px-8 py-16 md:px-12 md:py-20">
+      {/* ── Bloque rojo con CTA ── */}
+      <section className="rounded-2xl bg-background-accent px-8 py-16 md:px-12 md:py-20">
         <div className="mx-auto max-w-3xl space-y-8 text-center">
-          <h2 className="text-3xl font-semibold text-text-contrast md:text-4xl">
-            Operación centralizada, escalable por roles, con datos para decisiones
+          <h2 className="text-4xl font-bold text-text-contrast md:text-5xl">
+            Operación centralizada, escalable por roles
           </h2>
-          <p className="text-lg leading-relaxed text-text-contrast/80">
+          <p className="text-lg leading-relaxed text-text-contrast/90">
             Conecta pedidos, cocina, despacho y entrega en una sola plataforma.
             Estructura preparada para reportes de rendimiento por restaurante,
             sucursal y equipo.
           </p>
           <a
             href="/login"
-            className="inline-flex h-12 items-center justify-center rounded-md border border-text-contrast px-6 text-sm font-medium text-text-contrast transition-colors duration-200 hover:bg-background-primary hover:text-accent"
+            className="inline-flex h-12 items-center justify-center rounded-lg bg-text-contrast px-8 text-sm font-semibold text-accent transition-all hover:shadow-lg hover:scale-105"
           >
             Empezar ahora
           </a>
         </div>
       </section>
 
-      {/* ── Capacidades: grid asimétrico 2 cols ── */}
+      {/* ── Capacidades del sistema ── */}
       <section className="space-y-8">
-        <h2 className="text-3xl font-semibold md:text-4xl">
+        <h2 className="text-4xl font-bold md:text-5xl">
           Capacidades del <span className="text-accent">sistema</span>
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-3 rounded-lg border-l-4 border-accent bg-background-secondary p-8">
-            <p className="text-sm font-semibold text-accent-dark">Catálogo</p>
-            <p className="text-lg font-medium text-text-primary">
+          <div className="space-y-3 rounded-xl border-2 border-accent/30 bg-background-secondary p-8 transition-all hover:border-accent">
+            <p className="text-sm font-bold uppercase text-accent">Catálogo</p>
+            <p className="text-lg font-semibold text-text-primary">
               CRUD de menú con insertMany y updateMany para gestionar productos
               en volumen.
             </p>
           </div>
-          <div className="space-y-3 rounded-lg border-l-4 border-accent-dark p-8">
-            <p className="text-sm font-semibold text-accent">Órdenes</p>
-            <p className="text-lg font-medium">
+          <div className="space-y-3 rounded-xl border-2 border-accent/30 bg-background-secondary p-8 transition-all hover:border-accent">
+            <p className="text-sm font-bold uppercase text-accent">Órdenes</p>
+            <p className="text-lg font-semibold text-text-primary">
               Creación, tracking y cambio de estado con historial embebido
               y flujos transaccionales.
             </p>
           </div>
-          <div className="space-y-3 rounded-lg border-l-4 border-accent-light p-8">
-            <p className="text-sm font-semibold text-accent">Búsqueda</p>
-            <p className="text-lg font-medium">
+          <div className="space-y-3 rounded-xl border-2 border-accent/30 bg-background-secondary p-8 transition-all hover:border-accent">
+            <p className="text-sm font-bold uppercase text-accent">Búsqueda</p>
+            <p className="text-lg font-semibold text-text-primary">
               Índices de texto, geoespaciales y multikey para filtrar restaurantes
               y platillos al instante.
             </p>
           </div>
-          <div className="space-y-3 rounded-lg border-l-4 border-accent bg-background-secondary p-8">
-            <p className="text-sm font-semibold text-accent-dark">Reseñas</p>
-            <p className="text-lg font-medium text-text-primary">
+          <div className="space-y-3 rounded-xl border-2 border-accent/30 bg-background-secondary p-8 transition-all hover:border-accent">
+            <p className="text-sm font-bold uppercase text-accent">Reseñas</p>
+            <p className="text-lg font-semibold text-text-primary">
               Sistema de calificaciones con aggregation pipeline para promedio
               por restaurante.
             </p>
@@ -157,11 +161,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Footer mínimo ── */}
-      <footer className="space-y-4 border-t-2 border-accent pt-12">
-        <p className="text-2xl font-semibold">
-          Whenever <span className="text-accent">Bites</span><span className="text-accent-dark">.</span>
-        </p>
+      {/* ── Footer ── */}
+      <footer className="border-t-2 border-accent pt-12 space-y-6">
+        <div>
+          <p className="text-3xl font-bold">
+            Whenever <span className="text-accent">Bites</span>
+          </p>
+        </div>
         <p className="text-sm text-text-secondary">
           Sistema de comidas — Proyecto de Base de Datos, 2026.
         </p>
@@ -169,3 +175,4 @@ export default function Home() {
     </main>
   );
 }
+

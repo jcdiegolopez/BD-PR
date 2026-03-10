@@ -9,21 +9,21 @@ module.exports = {
     extend: {
       colors: {
         background: {
-          primary: '#F5F0E8',
-          secondary: '#F3E1E4',
+          primary: '#FBF4EE',
+          secondary: '#F2E1D3',
           accent: '#D62B42',
-          'accent-light': '#ED3951',
-          'accent-dark': '#B8283B',
+          'accent-light': '#E45163',
+          'accent-dark': '#A62033',
         },
         text: {
-          primary: '#1A1A1A',
-          secondary: '#6B6B6B',
-          contrast: '#F5F0E8',
+          primary: '#201817',
+          secondary: '#6B5752',
+          contrast: '#FFF7F2',
         },
         accent: {
           DEFAULT: '#D62B42',
-          light: '#ED3951',
-          dark: '#B8283B',
+          light: '#E45163',
+          dark: '#A62033',
         },
         status: {
           pending:     { bg: '#FEF3C7', text: '#92400E' },

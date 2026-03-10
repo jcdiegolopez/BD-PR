@@ -1,6 +1,21 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 function toDateInputValue(date) {
   return date.toISOString().slice(0, 10);
@@ -27,6 +42,8 @@ function ReportCard({ title, value, subtitle }) {
   );
 }
 
+const CHART_COLORS = ["#D62B42", "#FF6B6B", "#FFA07A", "#FFB347", "#FFC67D"];
+
 export default function ReportesDashboard() {
   const defaultUntil = toDateInputValue(new Date());
   const defaultFromDate = new Date();
@@ -41,13 +58,43 @@ export default function ReportesDashboard() {
   const [platillos, setPlatillos] = useState([]);
   const [tiempos, setTiempos] = useState([]);
   const [calificaciones, setCalificaciones] = useState([]);
+  const [user, setUser] = useState(null);
+  const [restaurantes, setRestaurantes] = useState([]);
+  const [restauranteSeleccionado, setRestauranteSeleccionado] = useState("");
+
+  // Cargar usuario y restaurantes al montar
+  useEffect(() => {
+    const loadUserAndRestaurantes = async () => {
+      try {
+        const userRes = await fetch("/api/auth/me");
+        if (!userRes.ok) throw new Error("No se pudo cargar usuario");
+        const userData = await userRes.json();
+        setUser(userData.user);
+
+        const restRes = await fetch("/api/restaurantes/mis-restaurantes");
+        if (!restRes.ok) throw new Error("No se pudieron cargar restaurantes");
+        const restData = await restRes.json();
+        setRestaurantes(restData.data);
+
+        // Si es owner, seleccionar automáticamente su restaurante
+        if (userData.user.rol === "owner" && restData.data.length > 0) {
+          setRestauranteSeleccionado(restData.data[0]._id);
+        }
+      } catch (err) {
+        console.error("Error cargando usuario:", err);
+      }
+    };
+
+    loadUserAndRestaurantes();
+  }, []);
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
     if (desde) params.set("desde", desde);
     if (hasta) params.set("hasta", hasta);
+    if (restauranteSeleccionado) params.set("restaurante_id", restauranteSeleccionado);
     return params.toString();
-  }, [desde, hasta]);
+  }, [desde, hasta, restauranteSeleccionado]);
 
   const summary = useMemo(() => {
     const ventasTotales = ventas.reduce((acc, row) => {
@@ -121,14 +168,14 @@ export default function ReportesDashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-semibold">Reportes analiticos</h2>
+        <h2 className="text-2xl font-semibold">Reportes analíticos</h2>
         <p className="mt-1 text-sm text-text-secondary">
-          R1 ventas, R2 platillos, R3 tiempos y R4 calificaciones.
+          R1 ventas, R2 platillos, R3 tiempos y R4 calificaciones con gráficas visuales.
         </p>
       </div>
 
       <div className="rounded-lg border border-text-secondary/10 bg-background-primary p-4">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <div className="space-y-1">
             <label className="text-sm font-medium">Desde</label>
             <input
@@ -149,7 +196,25 @@ export default function ReportesDashboard() {
             />
           </div>
 
-          <div className="sm:col-span-2 lg:col-span-2 flex items-end">
+          {user?.rol === "admin" && (
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Restaurante</label>
+              <select
+                value={restauranteSeleccionado}
+                onChange={(e) => setRestauranteSeleccionado(e.target.value)}
+                className="w-full rounded-md border border-text-secondary/20 bg-background-secondary px-3 py-2 text-sm"
+              >
+                <option value="">Todos</option>
+                {restaurantes.map((r) => (
+                  <option key={r._id} value={r._id}>
+                    {r.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="flex items-end gap-2">
             <button
               type="button"
               onClick={loadReports}
@@ -173,122 +238,198 @@ export default function ReportesDashboard() {
           value={`${summary.promedioTiempo.toFixed(1)} min`}
         />
         <ReportCard
-          title="Promedio calificacion"
+          title="Promedio calificación"
           value={summary.promedioCalif ? summary.promedioCalif.toFixed(2) : "—"}
         />
       </div>
 
-      <section className="space-y-2">
+      {/* R1 Ventas */}
+      <section className="space-y-4">
         <h3 className="text-lg font-semibold">R1 Ventas por restaurante</h3>
         {ventas.length === 0 ? (
           <p className="text-sm text-text-secondary">Sin datos.</p>
         ) : (
-          <div className="rounded-lg border border-text-secondary/10 overflow-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-background-secondary">
-                <tr>
-                  <th className="px-3 py-2 text-left">Restaurante</th>
-                  <th className="px-3 py-2 text-right">Ordenes</th>
-                  <th className="px-3 py-2 text-right">Ventas</th>
-                  <th className="px-3 py-2 text-right">Ticket promedio</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ventas.map((row) => (
-                  <tr key={row.restaurante_id} className="border-t border-text-secondary/10">
-                    <td className="px-3 py-2">{row.restaurante}</td>
-                    <td className="px-3 py-2 text-right">{formatNumber(row.total_ordenes)}</td>
-                    <td className="px-3 py-2 text-right">{formatCurrency(row.ventas_brutas)}</td>
-                    <td className="px-3 py-2 text-right">{formatCurrency(row.ticket_promedio)}</td>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="rounded-lg border border-text-secondary/10 bg-background-secondary p-4">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={ventas}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="restaurante" angle={-45} textAnchor="end" height={80} />
+                  <YAxis />
+                  <Tooltip formatter={(value) => formatCurrency(value)} />
+                  <Bar dataKey="ventas_brutas" fill="#D62B42" name="Ventas" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="rounded-lg border border-text-secondary/10 overflow-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-background-secondary">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Restaurante</th>
+                    <th className="px-3 py-2 text-right">Órdenes</th>
+                    <th className="px-3 py-2 text-right">Ventas</th>
+                    <th className="px-3 py-2 text-right">Ticket promedio</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {ventas.map((row) => (
+                    <tr key={row.restaurante_id} className="border-t border-text-secondary/10">
+                      <td className="px-3 py-2">{row.restaurante}</td>
+                      <td className="px-3 py-2 text-right">{formatNumber(row.total_ordenes)}</td>
+                      <td className="px-3 py-2 text-right">{formatCurrency(row.ventas_brutas)}</td>
+                      <td className="px-3 py-2 text-right">{formatCurrency(row.ticket_promedio)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </section>
 
-      <section className="space-y-2">
-        <h3 className="text-lg font-semibold">R2 Top platillos</h3>
+      {/* R2 Platillos */}
+      <section className="space-y-4">
+        <h3 className="text-lg font-semibold">R2 Top platillos más vendidos</h3>
         {platillos.length === 0 ? (
           <p className="text-sm text-text-secondary">Sin datos.</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {platillos.map((row) => (
-              <div
-                key={`${row.restaurante_id}-${row.menuitem_id}`}
-                className="rounded-lg border border-text-secondary/10 bg-background-secondary p-3"
-              >
-                <p className="font-medium">{row.nombre}</p>
-                <p className="text-xs text-text-secondary">{row.restaurante}</p>
-                <p className="mt-2 text-sm">Unidades: {formatNumber(row.unidades_vendidas)}</p>
-                <p className="text-sm">Monto: {formatCurrency(row.monto_vendido)}</p>
-              </div>
-            ))}
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="rounded-lg border border-text-secondary/10 bg-background-secondary p-4">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart 
+                  data={platillos.slice(0, 10)} 
+                  layout="vertical"
+                  margin={{ left: 150 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis dataKey="nombre" type="category" width={140} tick={{ fontSize: 12 }} />
+                  <Tooltip formatter={(value) => formatNumber(value)} />
+                  <Bar dataKey="unidades_vendidas" fill="#FF6B6B" name="Unidades" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="space-y-3">
+              {platillos.slice(0, 5).map((row) => (
+                <div
+                  key={`${row.restaurante_id}-${row.menuitem_id}`}
+                  className="rounded-lg border border-text-secondary/10 bg-background-secondary p-3"
+                >
+                  <p className="font-medium">{row.nombre}</p>
+                  <p className="text-xs text-text-secondary">{row.restaurante}</p>
+                  <div className="mt-2 flex justify-between">
+                    <p className="text-sm">Unidades: {formatNumber(row.unidades_vendidas)}</p>
+                    <p className="text-sm font-semibold text-accent">{formatCurrency(row.monto_vendido)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </section>
 
-      <section className="space-y-2">
+      {/* R3 Tiempos */}
+      <section className="space-y-4">
         <h3 className="text-lg font-semibold">R3 Tiempos por estado y sucursal</h3>
         {tiempos.length === 0 ? (
           <p className="text-sm text-text-secondary">Sin datos.</p>
         ) : (
-          <div className="rounded-lg border border-text-secondary/10 overflow-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-background-secondary">
-                <tr>
-                  <th className="px-3 py-2 text-left">Restaurante</th>
-                  <th className="px-3 py-2 text-left">Sucursal</th>
-                  <th className="px-3 py-2 text-left">Estado</th>
-                  <th className="px-3 py-2 text-right">Transiciones</th>
-                  <th className="px-3 py-2 text-right">Promedio min</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tiempos.map((row) => (
-                  <tr key={`${row.sucursal_id}-${row.estado}`} className="border-t border-text-secondary/10">
-                    <td className="px-3 py-2">{row.restaurante}</td>
-                    <td className="px-3 py-2">{row.sucursal}</td>
-                    <td className="px-3 py-2">{row.estado}</td>
-                    <td className="px-3 py-2 text-right">{formatNumber(row.transiciones)}</td>
-                    <td className="px-3 py-2 text-right">{Number(row.promedio_minutos).toFixed(2)}</td>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="rounded-lg border border-text-secondary/10 bg-background-secondary p-4">
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={tiempos.slice(0, 20)}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="estado" angle={-45} textAnchor="end" height={80} />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="promedio_minutos" stroke="#D62B42" name="Promedio (min)" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="rounded-lg border border-text-secondary/10 overflow-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-background-secondary">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Sucursal</th>
+                    <th className="px-3 py-2 text-left">Estado</th>
+                    <th className="px-3 py-2 text-right">Transiciones</th>
+                    <th className="px-3 py-2 text-right">Promedio (min)</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {tiempos.map((row) => (
+                    <tr key={`${row.sucursal_id}-${row.estado}`} className="border-t border-text-secondary/10">
+                      <td className="px-3 py-2">{row.sucursal}</td>
+                      <td className="px-3 py-2">{row.estado}</td>
+                      <td className="px-3 py-2 text-right">{formatNumber(row.transiciones)}</td>
+                      <td className="px-3 py-2 text-right font-medium">{Number(row.promedio_minutos).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </section>
 
-      <section className="space-y-2">
+      {/* R4 Calificaciones */}
+      <section className="space-y-4">
         <h3 className="text-lg font-semibold">R4 Calificaciones por restaurante</h3>
         {calificaciones.length === 0 ? (
           <p className="text-sm text-text-secondary">Sin datos.</p>
         ) : (
-          <div className="rounded-lg border border-text-secondary/10 overflow-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-background-secondary">
-                <tr>
-                  <th className="px-3 py-2 text-left">Restaurante</th>
-                  <th className="px-3 py-2 text-right">Resenas</th>
-                  <th className="px-3 py-2 text-right">Promedio</th>
-                  <th className="px-3 py-2 text-left">Distribucion</th>
-                </tr>
-              </thead>
-              <tbody>
-                {calificaciones.map((row) => (
-                  <tr key={row.restaurante_id} className="border-t border-text-secondary/10">
-                    <td className="px-3 py-2">{row.restaurante}</td>
-                    <td className="px-3 py-2 text-right">{formatNumber(row.total_resenas)}</td>
-                    <td className="px-3 py-2 text-right">{Number(row.calificacion_promedio).toFixed(2)}</td>
-                    <td className="px-3 py-2 text-xs text-text-secondary">
-                      1:{row.distribucion["1"]} 2:{row.distribucion["2"]} 3:{row.distribucion["3"]} 4:{row.distribucion["4"]} 5:{row.distribucion["5"]}
-                    </td>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="rounded-lg border border-text-secondary/10 bg-background-secondary p-4">
+              {calificaciones.length > 0 && (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={calificaciones}
+                      dataKey="total_resenas"
+                      nameKey="restaurante"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      label
+                    >
+                      {calificaciones.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+
+            <div className="rounded-lg border border-text-secondary/10 overflow-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-background-secondary">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Restaurante</th>
+                    <th className="px-3 py-2 text-right">Reseñas</th>
+                    <th className="px-3 py-2 text-right">Promedio</th>
+                    <th className="px-3 py-2 text-left">Distribución</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {calificaciones.map((row) => (
+                    <tr key={row.restaurante_id} className="border-t border-text-secondary/10">
+                      <td className="px-3 py-2">{row.restaurante}</td>
+                      <td className="px-3 py-2 text-right">{formatNumber(row.total_resenas)}</td>
+                      <td className="px-3 py-2 text-right font-semibold text-accent">{Number(row.calificacion_promedio).toFixed(2)} ⭐</td>
+                      <td className="px-3 py-2 text-xs text-text-secondary">
+                        1⭐:{row.distribucion["1"]} 2⭐:{row.distribucion["2"]} 3⭐:{row.distribucion["3"]} 4⭐:{row.distribucion["4"]} 5⭐:{row.distribucion["5"]}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </section>
