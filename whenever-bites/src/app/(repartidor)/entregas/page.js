@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const ESTADO_STYLE = {
   pendiente: "bg-status-pending-bg text-status-pending-text",
@@ -39,8 +39,13 @@ function getRepartidorActionLabel(nextState) {
   return "";
 }
 
-
-function OrderCard({ o, showAddress = false, onAdvance, isUpdating = false, onShowDetail }) {
+function OrderCard({
+  o,
+  showAddress = false,
+  onAdvance,
+  isUpdating = false,
+  onShowDetail = () => {},
+}) {
   const nextState = getRepartidorNextState(o);
 
   return (
@@ -122,45 +127,6 @@ function OrderCard({ o, showAddress = false, onAdvance, isUpdating = false, onSh
     </div>
   );
 }
-
-export default function EntregasPage() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [updatingId, setUpdatingId] = useState("");
-
-  const loadOrders = async () => {
-    const res = await fetch("/api/ordenes");
-
-    if (res.status === 400) {
-      const d = await res.json();
-      throw new Error(
-        d.error || "No tienes una sucursal asignada. Contacta al administrador.",
-      );
-    }
-
-    if (!res.ok) throw new Error("Error al cargar entregas");
-
-    return res.json();
-  };
-
-  const changeOrderState = async (orderId, nextState) => {
-    setUpdatingId(orderId);
-    setError("");
-
-    try {
-      const res = await fetch(`/api/ordenes/${orderId}/estado`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ estado: nextState }),
-      });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || "No se pudo actualizar la orden");
-      }
-
-import { useRef } from "react";
 
 function DetailModal({ open, onClose, order }) {
   if (!open || !order) return null;
@@ -315,6 +281,15 @@ export default function EntregasPage() {
       <div className="space-y-3">
         <h2 className="text-2xl font-semibold">Entregas</h2>
         <p className="text-text-secondary">{error}</p>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="space-y-3">
+        <h2 className="text-2xl font-semibold">Entregas</h2>
+        <p className="text-text-secondary">No hay datos para mostrar.</p>
       </div>
     );
   }
