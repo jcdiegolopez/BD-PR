@@ -63,22 +63,31 @@ async function handleRepartidorOrders(db, user, request) {
   const url = new URL(request.url);
   const page = Math.max(1, parseInt(url.searchParams.get("page")) || 1);
   const limit = Math.min(50, Math.max(1, parseInt(url.searchParams.get("limit")) || 20));
-  const estado = url.searchParams.get("estado"); // opcional: listo, en_camino
+  const estado = url.searchParams.get("estado"); // opcional: listo, en_camino, entregado
 
   const skip = (page - 1) * limit;
 
-  // Órdenes delivery activas de la sucursal
-  const query = {
+  const allowedEstados = ["listo", "en_camino", "entregado"];
+
+  // Vista por defecto: entregas activas de la sucursal.
+  const activeQuery = {
     sucursal_id: sid,
     tipo: "delivery",
     estado_actual: { $in: ["listo", "en_camino"] },
   };
 
-  if (estado && ["listo", "en_camino"].includes(estado)) {
+  const query = {
+    ...activeQuery,
+  };
+
+  if (estado && allowedEstados.includes(estado)) {
     query.estado_actual = estado;
   }
 
-  const total = await db.collection("ordenes").countDocuments(query);
+  const [total, totalActivas] = await Promise.all([
+    db.collection("ordenes").countDocuments(query),
+    db.collection("ordenes").countDocuments(activeQuery),
+  ]);
 
   const ordenes = await db
     .collection("ordenes")
@@ -153,7 +162,7 @@ async function handleRepartidorOrders(db, user, request) {
   return NextResponse.json({
     sucursalLabel: `${restName} — ${sucName}`,
     stats: {
-      totalActivas: total,
+      totalActivas,
       entregadasHoy,
       totalDelivery,
     },

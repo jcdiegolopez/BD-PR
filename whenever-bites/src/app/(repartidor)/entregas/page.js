@@ -18,6 +18,20 @@ const ESTADO_LABEL = {
   entregado: "Entregado",
 };
 
+const FILTER_LABEL = {
+  "": "Entregas activas",
+  listo: "Listas para recoger",
+  en_camino: "Entregas en camino",
+  entregado: "Entregas entregadas",
+};
+
+const FILTER_EMPTY_MESSAGE = {
+  "": "No hay entregas pendientes en este momento.",
+  listo: "No hay entregas listas para recoger en este momento.",
+  en_camino: "No hay entregas en camino en este momento.",
+  entregado: "No hay entregas marcadas como entregadas en este momento.",
+};
+
 function formatDate(d) {
   return new Date(d).toLocaleDateString("es-GT", {
     day: "2-digit",
@@ -197,6 +211,9 @@ export default function EntregasPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedEstado, setSelectedEstado] = useState(""); 
   const detailCache = useRef({});
+  const sectionTitle = FILTER_LABEL[selectedEstado] || FILTER_LABEL[""];
+  const emptyMessage =
+    FILTER_EMPTY_MESSAGE[selectedEstado] || FILTER_EMPTY_MESSAGE[""];
 
   const loadOrders = async (page = 1, estado = selectedEstado) => {
     const params = new URLSearchParams({
@@ -289,6 +306,13 @@ export default function EntregasPage() {
     }
   };
 
+  useEffect(() => {
+    loadOrders(currentPage, selectedEstado)
+      .then(setData)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -367,18 +391,19 @@ export default function EntregasPage() {
         <select
           id="estado-filter"
           value={selectedEstado}
-          onChange={handleEstadoChange}
+          onChange={(e) => handleEstadoChange(e.target.value)}
           className="px-3 py-2 border border-text-secondary/20 rounded-md bg-background-primary text-text-primary"
         >
-          <option value="">Todos</option>
-          <option value="Listo">Listo</option>
-          <option value="En camino">En camino</option>
+          <option value="">Activas</option>
+          <option value="listo">Listo</option>
+          <option value="en_camino">En camino</option>
+          <option value="entregado">Entregado</option>
         </select>
       </div>
 
       <section className="space-y-3">
         <h3 className="text-lg font-semibold flex items-center gap-2">
-          🛵 Entregas activas
+          🛵 {sectionTitle}
           {data.ordenes.length > 0 && (
             <span className="text-xs font-normal bg-accent/10 text-accent rounded-full px-2 py-0.5">
               {data.ordenes.length} de {data.pagination.total}
@@ -388,7 +413,7 @@ export default function EntregasPage() {
 
         {data.ordenes.length === 0 ? (
           <p className="text-text-secondary text-sm">
-            No hay entregas pendientes en este momento.
+            {emptyMessage}
           </p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
