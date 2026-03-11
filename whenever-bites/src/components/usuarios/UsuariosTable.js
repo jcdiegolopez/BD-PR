@@ -18,7 +18,8 @@ function formatMoney(v) {
 /* ── Detalle por rol ─────────────────────────────────────── */
 
 function CustomerDetail({ data }) {
-  const { ordenes, resenas } = data;
+  const ordenes = data?.ordenes || { total: 0, recientes: [] };
+  const resenas = data?.resenas || { total: 0, lista: [] };
   return (
     <div className="grid gap-6 md:grid-cols-2">
       {/* Órdenes recientes */}
@@ -26,11 +27,11 @@ function CustomerDetail({ data }) {
         <h4 className="text-sm font-semibold mb-2">
           Pedidos ({ordenes.total})
         </h4>
-        {ordenes.recientes.length === 0 ? (
+        {(ordenes.recientes || []).length === 0 ? (
           <p className="text-xs text-text-secondary">Sin pedidos aún.</p>
         ) : (
           <ul className="space-y-2">
-            {ordenes.recientes.map((o) => (
+            {(ordenes.recientes || []).map((o) => (
               <li
                 key={o._id}
                 className="rounded-md border border-text-secondary/10 bg-background-primary p-3 text-xs"
@@ -57,11 +58,11 @@ function CustomerDetail({ data }) {
         <h4 className="text-sm font-semibold mb-2">
           Reseñas ({resenas.total})
         </h4>
-        {resenas.lista.length === 0 ? (
+        {(resenas.lista || []).length === 0 ? (
           <p className="text-xs text-text-secondary">Sin reseñas aún.</p>
         ) : (
           <ul className="space-y-2">
-            {resenas.lista.map((r) => (
+            {(resenas.lista || []).map((r) => (
               <li
                 key={r._id}
                 className="rounded-md border border-text-secondary/10 bg-background-primary p-3 text-xs"
@@ -84,7 +85,7 @@ function CustomerDetail({ data }) {
 }
 
 function OwnerDetail({ data }) {
-  const { restaurantes } = data;
+  const restaurantes = data?.restaurantes || [];
   return (
     <div>
       <h4 className="text-sm font-semibold mb-2">
@@ -108,7 +109,7 @@ function OwnerDetail({ data }) {
                 <span>{r.total_resenas} reseñas</span>
                 <span>{r.total_ordenes} pedidos</span>
               </div>
-              {r.sucursales.length > 0 && (
+              {(r.sucursales || []).length > 0 && (
                 <div className="mt-2 border-t border-text-secondary/10 pt-2">
                   <p className="font-medium mb-1">Sucursales:</p>
                   {r.sucursales.map((s) => (
@@ -127,7 +128,8 @@ function OwnerDetail({ data }) {
 }
 
 function WorkerDetail({ data }) {
-  const { sucursal, ordenes_atendidas } = data;
+  const sucursal = data?.sucursal || null;
+  const ordenes_atendidas = data?.ordenes_atendidas || 0;
   return (
     <div className="space-y-2 text-xs">
       <div>
@@ -157,7 +159,8 @@ function WorkerDetail({ data }) {
 }
 
 function RepartidorDetail({ data }) {
-  const { sucursal, entregas } = data;
+  const sucursal = data?.sucursal || null;
+  const entregas = data?.entregas || 0;
   return (
     <div className="space-y-2 text-xs">
       <div>
@@ -222,34 +225,41 @@ function EstadoBadge({ estado }) {
 /* ── Resumen en línea por rol ─────────────────────────────── */
 
 function InlineSummary({ user }) {
-  const d = user.detalle;
+  const d = user.detalle || {};
   if (user.rol === "customer") {
+    const ordenes = d.ordenes || { total: 0 };
+    const resenas = d.resenas || { total: 0 };
     return (
       <span className="text-xs text-text-secondary">
-        {d.ordenes.total} pedidos · {d.resenas.total} reseñas
+        {ordenes.total} pedidos · {resenas.total} reseñas
       </span>
     );
   }
   if (user.rol === "owner") {
+    const restaurantes = d.restaurantes || [];
     return (
       <span className="text-xs text-text-secondary">
-        {d.restaurantes.length} restaurante{d.restaurantes.length !== 1 && "s"}
+        {restaurantes.length} restaurante{restaurantes.length !== 1 && "s"}
       </span>
     );
   }
   if (user.rol === "worker") {
+    const sucursal = d.sucursal;
+    const ordenes_atendidas = d.ordenes_atendidas || 0;
     return (
       <span className="text-xs text-text-secondary">
-        {d.sucursal ? d.sucursal.restaurante + " — " + d.sucursal.nombre : "Sin sucursal"}
-        {" · "}{d.ordenes_atendidas} órdenes
+        {sucursal ? sucursal.restaurante + " — " + sucursal.nombre : "Sin sucursal"}
+        {" · "}{ordenes_atendidas} órdenes
       </span>
     );
   }
   if (user.rol === "repartidor") {
+    const sucursal = d.sucursal;
+    const entregas = d.entregas || 0;
     return (
       <span className="text-xs text-text-secondary">
-        {d.sucursal ? d.sucursal.restaurante + " — " + d.sucursal.nombre : "Sin sucursal"}
-        {" · "}{d.entregas} entregas
+        {sucursal ? sucursal.restaurante + " — " + sucursal.nombre : "Sin sucursal"}
+        {" · "}{entregas} entregas
       </span>
     );
   }

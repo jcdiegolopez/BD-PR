@@ -101,51 +101,53 @@ function StaffModal({ sucursalId, onClose }) {
 }
 
 export default function SucursalesPage() {
+  const [restaurantes, setRestaurantes] = useState([]);
   const [sucursales, setSucursales] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [restauranteSeleccionado, setRestauranteSeleccionado] = useState(null);
+  const [loadingRest, setLoadingRest] = useState(true);
+  const [loadingSuc, setLoadingSuc] = useState(false);
   const [error, setError] = useState("");
   const [selectedSucursal, setSelectedSucursal] = useState(null);
 
-  const loadSucursales = useCallback(() => {
-    setLoading(true);
+  // Cargar restaurantes al montar
+  useEffect(() => {
+    setLoadingRest(true);
     fetch("/api/restaurantes")
       .then((res) => res.json())
-      .then(async (rests) => {
-        const allSucursales = [];
+      .then((rests) => {
         const restList = Array.isArray(rests) ? rests : rests.data || [];
-
-        for (const r of restList) {
-          try {
-            const res = await fetch(`/api/restaurantes/${r._id}/sucursales`);
-            const sData = await res.json();
-            const sList = Array.isArray(sData) ? sData : sData.data || [];
-            for (const s of sList) {
-              allSucursales.push({ ...s, restaurante: r.nombre });
-            }
-          } catch {
-            // ignored
-          }
+        setRestaurantes(restList);
+        if (restList.length > 0) {
+          setRestauranteSeleccionado(restList[0]._id);
         }
-
-        setSucursales(allSucursales);
       })
       .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+      .finally(() => setLoadingRest(false));
   }, []);
 
+  // Cargar sucursales cuando cambia restaurante seleccionado
   useEffect(() => {
-    loadSucursales();
-  }, [loadSucursales]);
+    if (!restauranteSeleccionado) {
+      setSucursales([]);
+      return;
+    }
 
-  if (loading) {
+    setLoadingSuc(true);
+    fetch(`/api/restaurantes/${restauranteSeleccionado}/sucursales`)
+      .then((res) => res.json())
+      .then((sData) => {
+        const sList = Array.isArray(sData) ? sData : sData.data || [];
+        setSucursales(sList);
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoadingSuc(false));
+  }, [restauranteSeleccionado]);
+
+  if (loadingRest) {
     return (
       <div className="space-y-6">
         <div className="h-8 w-64 animate-pulse rounded bg-background-secondary" />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-40 animate-pulse rounded-lg bg-background-secondary" />
-          ))}
-        </div>
+        <div className="h-12 w-80 animate-pulse rounded-lg bg-background-secondary" />
       </div>
     );
   }
@@ -154,25 +156,67 @@ export default function SucursalesPage() {
     return <p className="text-accent">{error}</p>;
   }
 
+  const restauranteActual = restaurantes.find((r) => r._id === restauranteSeleccionado);
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-semibold">Sucursales</h2>
         <p className="text-text-secondary text-sm mt-1">
-          {sucursales.length} sucursal{sucursales.length !== 1 && "es"} registrada
-          {sucursales.length !== 1 && "s"}
+          Selecciona un restaurante para ver sus sucursales
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {sucursales.map((s) => (
-          <SucursalCard
-            key={s._id}
-            sucursal={s}
-            onViewStaff={setSelectedSucursal}
-          />
-        ))}
+      {/* Selector de restaurante */}
+      <div>
+        <label className="text-sm text-text-secondary block mb-2">Restaurante</label>
+        <select
+          value={restauranteSeleccionado || ""}
+          onChange={(e) => setRestauranteSeleccionado(e.target.value)}
+          className="rounded-md border border-text-secondary/20 bg-background-secondary px-4 py-2 text-sm w-full max-w-md"
+        >
+          {restaurantes.map((r) => (
+            <option key={r._id} value={r._id}>
+              {r.nombre}
+            </option>
+          ))}
+        </select>
       </div>
+
+      {/* Sucursales del restaurante seleccionado */}
+      {restauranteSeleccionado && (
+        <div>
+          <h3 className="font-semibold text-sm mb-3">
+            Sucursales de {restauranteActual?.nombre}
+            {" "}
+            <span className="text-text-secondary text-xs font-normal">
+              ({sucursales.length})
+            </span>
+          </h3>
+
+          {loadingSuc ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-40 animate-pulse rounded-lg bg-background-secondary" />
+              ))}
+            </div>
+          ) : sucursales.length === 0 ? (
+            <p className="text-sm text-text-secondary">
+              Sin sucursales registradas para este restaurante.
+            </p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {sucursales.map((s) => (
+                <SucursalCard
+                  key={s._id}
+                  sucursal={{ ...s, restaurante: restauranteActual?.nombre }}
+                  onViewStaff={setSelectedSucursal}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {selectedSucursal && (
         <StaffModal

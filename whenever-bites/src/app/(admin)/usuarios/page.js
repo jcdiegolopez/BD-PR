@@ -177,10 +177,18 @@ export default function UsuariosPage() {
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [filtroRol, setFiltroRol] = useState("");
+  const [filtroActivo, setFiltroActivo] = useState("");
 
   const loadUsuarios = useCallback(() => {
     setLoading(true);
-    fetch("/api/admin/usuarios")
+    const params = new URLSearchParams();
+    if (filtroRol) params.append("rol", filtroRol);
+    if (filtroActivo !== "") params.append("activo", filtroActivo === "true");
+    
+    const url = `/api/admin/usuarios${params.toString() ? "?" + params.toString() : ""}`;
+    
+    fetch(url)
       .then((res) => {
         if (!res.ok) throw new Error("Error al cargar usuarios");
         return res.json();
@@ -188,7 +196,7 @@ export default function UsuariosPage() {
       .then(setUsuarios)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [filtroRol, filtroActivo]);
 
   useEffect(() => {
     loadUsuarios();
@@ -219,6 +227,46 @@ export default function UsuariosPage() {
           </p>
         </div>
         <CreateUserForm onCreated={loadUsuarios} />
+      </div>
+
+      {/* Filtros */}
+      <div className="flex flex-wrap gap-3 items-center">
+        <div>
+          <label className="text-sm text-text-secondary block mb-1">Rol</label>
+          <select
+            value={filtroRol}
+            onChange={(e) => setFiltroRol(e.target.value)}
+            className="rounded-md border border-text-secondary/20 bg-background-secondary px-3 py-2 text-sm"
+          >
+            <option value="">Todos los roles</option>
+            {ROLES.map((r) => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="text-sm text-text-secondary block mb-1">Estado</label>
+          <select
+            value={filtroActivo}
+            onChange={(e) => setFiltroActivo(e.target.value)}
+            className="rounded-md border border-text-secondary/20 bg-background-secondary px-3 py-2 text-sm"
+          >
+            <option value="">Todos</option>
+            <option value="true">Activos</option>
+            <option value="false">Inactivos</option>
+          </select>
+        </div>
+        {(filtroRol || filtroActivo) && (
+          <button
+            onClick={() => {
+              setFiltroRol("");
+              setFiltroActivo("");
+            }}
+            className="text-sm text-accent hover:text-accent-dark transition-colors"
+          >
+            Limpiar filtros
+          </button>
+        )}
       </div>
 
       <UsuariosTable usuarios={usuarios} />

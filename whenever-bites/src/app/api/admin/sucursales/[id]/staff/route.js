@@ -12,7 +12,7 @@ import { withRole } from "@/lib/middleware";
  */
 const getStaffHandler = async (request, context, user) => {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
 
     if (!id || !ObjectId.isValid(id)) {
       return NextResponse.json(
