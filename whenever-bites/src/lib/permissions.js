@@ -27,7 +27,7 @@ export const ROLE_NAV_ITEMS = {
   ],
   owner: [
     { href: "/menu", label: "Menú" },
-    { href: "/sucursales", label: "Sucursales" },
+    { href: "/mis-sucursales", label: "Sucursales" },
     { href: "/reportes", label: "Reportes" },
   ],
   worker: [{ href: "/cola", label: "Cola de órdenes" }],
