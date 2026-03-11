@@ -58,7 +58,7 @@ function CreateUserForm({ onCreated }) {
       };
       if (needsSucursal) body.sucursal_asignada = sucursalId;
 
-      const res = await fetch("/api/usuarios", {
+      const res = await fetch("/api/admin/usuarios", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -180,7 +180,7 @@ export default function UsuariosPage() {
 
   const loadUsuarios = useCallback(() => {
     setLoading(true);
-    fetch("/api/usuarios")
+    fetch("/api/admin/usuarios")
       .then((res) => {
         if (!res.ok) throw new Error("Error al cargar usuarios");
         return res.json();
