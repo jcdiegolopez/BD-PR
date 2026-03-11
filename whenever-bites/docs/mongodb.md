@@ -203,11 +203,10 @@ Colección: resenas
 |--------|--------------|-----------------------------------------------|--------------|-------------|
 | IDX-01 | usuarios     | `email`                                       | Simple único | Q01         |
 | IDX-02 | usuarios     | `rol + activo`                                | Compuesto    | Q03         |
-| IDX-05 | ordenes      | `sucursal_id + creado_en + estado_actual`     | Compuesto ESR| Q16,Q17,Q26 |
+| IDX-05 | ordenes      | `sucursal_id + estado_actual + creado_en`     | Compuesto ESR| Q16,Q17,Q26 |
 | IDX-06 | ordenes      | `usuario_id + estado_actual`                  | Compuesto    | Q19         |
-| IDX-07 | ordenes      | `sucursal_id + tipo + estado_actual + creado_en` | Compuesto ESR| Q18         |
-| IDX-08 | resenas      | `restaurante_id + calificacion`               | Compuesto    | Q24         |
-| IDX-09 | menuitems    | `tags`                                        | Multikey     | Q12         |
+| IDX-07 | ordenes      | `sucursal_id + tipo + creado_en + estado_actual` | Compuesto ESR| Q18         |
+| IDX-08 | resenas      | `restaurante_id + calificacion + creado_en`   | Compuesto    | Q24         |
 | IDX-10 | usuarios     | `sucursal_asignada`                           | Simple       | Q04         |
 | IDX-11 | sucursales   | `ubicacion`                                   | 2dsphere     | Q09         |
 | IDX-12 | restaurantes | `tags`                                        | Multikey     | Q06         |
@@ -215,15 +214,14 @@ Colección: resenas
 | IDX-14 | restaurantes | `nombre + descripcion`                        | Texto        | Q07         |
 | IDX-15 | restaurantes | `activo`                                      | Simple       | Q06         |
 | IDX-16 | categorias   | `restaurante_id + activa`                     | Compuesto    | Q11         |
-| IDX-17 | ordenes      | `creado_en`                                   | Simple       | Q22, R1-R4  |
+| IDX-17 | ordenes      | `creado_en`                                   | Simple       | Q22         |
 | IDX-18 | resenas      | `usuario_id`                                  | Simple       | Q23,Q25     |
-| IDX-19 | resenas      | `restaurante_id + creado_en`                  | Compuesto    | Q27         |
 | IDX-20 | menuitems    | `restaurante_id + categoria_id + disponible`  | Compuesto    | Q12,Q14,Q15 |
 | IDX-21 | tipos_cocina | `activa`                                      | Simple       | Q05         |
 | IDX-22 | restaurantes | `activo + tipo_cocina_id`                     | Compuesto    | Q06         |
-| IDX-24 | sucursales   | `restaurante_id`                              | Simple       | Q10         |
-| IDX-25 | ordenes      | `restaurante_id + creado_en`                  | Compuesto    | R1, R3      |
-| IDX-26 | resenas      | `creado_en`                                   | Simple       | R4          |
+| IDX-24 | sucursales   | `restaurante_id + activa`                     | Compuesto    | Q10         |
+| IDX-25 | ordenes      | `restaurante_id + estado_actual + creado_en`  | Compuesto ESR| R1, R2, R3  |
+| IDX-26 | resenas      | `restaurante_id + creado_en`                  | Compuesto    | R4          |
 
 ---
 
@@ -244,6 +242,6 @@ Colección: resenas
 | ID | Descripción                          | Colección base | Índice principal |
 |----|--------------------------------------|----------------|------------------|
 | R1 | Ventas por restaurante en fechas     | ordenes        | IDX-25           |
-| R2 | Top 10 platillos más vendidos        | ordenes        | IDX-17           |
-| R3 | Tiempo promedio por estado/sucursal  | ordenes        | IDX-17           |
+| R2 | Top 10 platillos más vendidos        | ordenes        | IDX-25           |
+| R3 | Tiempo promedio por estado/sucursal  | ordenes        | IDX-25           |
 | R4 | Calificación promedio por restaurante| resenas        | IDX-26           |

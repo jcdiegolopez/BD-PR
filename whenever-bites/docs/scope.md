@@ -70,7 +70,6 @@ Plataforma de delivery y pickup estilo Rappi con múltiples restaurantes indepen
 | GET | `/api/restaurantes/[id]/categorias` | Listar categorías activas del menú | Q11 `find({ restaurante_id, activa: true })` | IDX-16 |
 | GET | `/api/restaurantes/[id]/menu` | Platillos disponibles, filtrables por categoría | Q12 `find({ restaurante_id, categoria_id?, disponible: true })` | IDX-20 |
 | GET | `/api/restaurantes/[id]/menu?search=` | Buscar platillo por nombre o descripción | Q13 `find({ restaurante_id, disponible: true, $text: { $search } })` | IDX-13 |
-| GET | `/api/restaurantes/[id]/menu?tag=` | Filtrar platillos por tag | Q12 `find({ restaurante_id, disponible: true, tags })` | IDX-09 |
 | GET | `/api/restaurantes/[id]/resenas` | Reseñas del restaurante ordenadas por calificación | Q24 `find({ restaurante_id, sort: calificacion })` | IDX-08 |
 | GET | `/api/sucursales/cercana?lng=&lat=` | Sucursal más cercana a una coordenada dada | Q09 `$geoNear({ ubicacion })` | IDX-11 |
 

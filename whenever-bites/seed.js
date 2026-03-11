@@ -2543,7 +2543,7 @@ async function crearIndices(db) {
   );
 
   await createIndexIfNotExists("sucursales", { ubicacion: "2dsphere" }, { name: "idx_sucursales_ubicacion" });
-  await createIndexIfNotExists("sucursales", { restaurante_id: 1 }, { name: "idx_sucursales_restaurante" });
+  await createIndexIfNotExists("sucursales", { restaurante_id: 1, activa: 1 }, { name: "idx_sucursales_restaurante" });
 
   await createIndexIfNotExists("tipos_cocina", { activa: 1 }, { name: "idx_tipos_cocina_activa" });
 
@@ -2554,7 +2554,6 @@ async function crearIndices(db) {
     { restaurante_id: 1, categoria_id: 1, disponible: 1 },
     { name: "idx_menuitems_restaurante_categoria_disponible" }
   );
-  await createIndexIfNotExists("menuitems", { tags: 1 }, { name: "idx_menuitems_tags" });
   await createIndexIfNotExists(
     "menuitems",
     { nombre: "text", descripcion: "text" },
@@ -2563,22 +2562,29 @@ async function crearIndices(db) {
 
   await createIndexIfNotExists(
     "ordenes",
-    { sucursal_id: 1, creado_en: -1, estado_actual: 1 },
+    { sucursal_id: 1, estado_actual: 1, creado_en: -1 },
     { name: "idx_ordenes_sucursal_fecha_estado" }
   );
   await createIndexIfNotExists("ordenes", { usuario_id: 1, estado_actual: 1 }, { name: "idx_ordenes_usuario_estado" });
   await createIndexIfNotExists(
     "ordenes",
-    { sucursal_id: 1, tipo: 1, estado_actual: 1 },
+    { sucursal_id: 1, tipo: 1, creado_en: -1, estado_actual: 1 },
     { name: "idx_ordenes_sucursal_tipo_estado" }
   );
   await createIndexIfNotExists("ordenes", { creado_en: -1 }, { name: "idx_ordenes_fecha" });
-  await createIndexIfNotExists("ordenes", { restaurante_id: 1, creado_en: -1 }, { name: "idx_ordenes_restaurante_fecha" });
+  await createIndexIfNotExists(
+    "ordenes",
+    { restaurante_id: 1, estado_actual: 1, creado_en: -1 },
+    { name: "idx_ordenes_restaurante_fecha" }
+  );
 
-  await createIndexIfNotExists("resenas", { restaurante_id: 1, calificacion: -1 }, { name: "idx_resenas_restaurante_calificacion" });
-  await createIndexIfNotExists("resenas", { restaurante_id: 1, creado_en: -1 }, { name: "idx_resenas_restaurante_fecha" });
+  await createIndexIfNotExists(
+    "resenas",
+    { restaurante_id: 1, calificacion: -1, creado_en: -1 },
+    { name: "idx_resenas_restaurante_calificacion" }
+  );
   await createIndexIfNotExists("resenas", { usuario_id: 1 }, { name: "idx_resenas_usuario" });
-  await createIndexIfNotExists("resenas", { creado_en: -1 }, { name: "idx_resenas_fecha" });
+  await createIndexIfNotExists("resenas", { restaurante_id: 1, creado_en: -1 }, { name: "idx_resenas_fecha" });
 
   console.log("✅ Verificación de índices completada");
 }
